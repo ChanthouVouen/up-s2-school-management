@@ -8,8 +8,8 @@ async function main() {
     await getOrCreateRole(name);
   }
 
-  const email = process.env.ADMIN_EMAIL || 'admin@school.com';
-  const password = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
+  const email = 'admin@school.com';
+  const password = 'password';
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
