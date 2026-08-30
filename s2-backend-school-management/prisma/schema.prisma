@@ -80,19 +80,36 @@ model BlacklistedToken {
 }
 
 model Student {
-  id            Int           @id @default(autoincrement())
-  studentCode   String        @unique
+  id            Int              @id @default(autoincrement())
+  studentCode   String           @unique
   name          String
   email         String?
-  status        StudentStatus @default(ENROLLED)
-  paymentStatus PaymentStatus @default(UNPAID)
+  phone         String?
+  gender        String?
+  dob           DateTime?
+  address       String?
+  status        StudentStatus    @default(ENROLLED)
+  paymentStatus PaymentStatus    @default(UNPAID)
   department    String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
   applications  Application[]
   documents     Document[]
+  histories     StudentHistory[]
 
   @@map("students")
+}
+
+model StudentHistory {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  action      String
+  description String
+  performedBy String?  @default("Admin")
+  createdAt   DateTime @default(now())
+
+  @@map("student_histories")
 }
 
 model Application {

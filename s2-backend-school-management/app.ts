@@ -9,6 +9,7 @@ import indexRouter from './routes/index';
 import usersRouter from './routes/users';
 import authRouter from './routes/auth';
 import dashboardRouter from './routes/dashboard';
+import studentsRouter from './routes/students';
 import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
 
@@ -25,6 +26,8 @@ app.use('/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/dashboard', dashboardRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/students', studentsRouter);
+app.use('/api/students', studentsRouter);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

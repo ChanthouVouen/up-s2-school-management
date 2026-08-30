@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import StudentManagement from "../../components/StudentManagement";
 import {
   fetchDashboardStats,
   DashboardData,
@@ -476,6 +477,8 @@ export default function Dashboard() {
                 </button>
               )}
             </div>
+
+            {activeNav === "Students" && <StudentManagement />}
 
             {/* Render full dashboard widgets only on Dashboard tab */}
             {activeNav === "Dashboard" && (
