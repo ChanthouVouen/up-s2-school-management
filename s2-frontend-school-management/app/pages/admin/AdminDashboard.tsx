@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -12,24 +12,71 @@ import {
   Pie,
   Cell,
 } from "recharts";
-// import TeacherPage from "../teachers/TeacherPage";
-// import Department from "../departments/DepartmentPage";
-// import DepartmentPage from "../departments/DepartmentPage";
+import {
+  LayoutGrid,
+  Users,
+  ClipboardList,
+  FileText,
+  GraduationCap,
+  Banknote,
+  CreditCard,
+  IdCard,
+  UserCog,
+  ShieldCheck,
+  BarChart3,
+  History,
+  Settings,
+  UserCheck,
+  UserPlus,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  FileCheck,
+} from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
-//navigation
-const NAV_ITEMS = [
-  { icon: "🏠", label: "Dashboard" },
-  { icon: "🏢", label: "Departments" },
-  { icon: "👨‍🏫", label: "Teachers" },
-  { icon: "👨‍🎓", label: "Students" },
-  { icon: "📚", label: "Subjects" },
-  { icon: "🏫", label: "Classes" },
-  { icon: "📝", label: "Enrollments" },
-  { icon: "📋", label: "Attendance" },
-  { icon: "📊", label: "Reports" },
-  { icon: "👥", label: "User Management" },
-  { icon: "⚙️", label: "Settings" },
+import {
+  fetchDashboardStats,
+  DashboardData,
+} from "../../services/dashboardService";
+
+// navigation items organized by categories for a clean sidebar structure
+const NAV_CATEGORIES = [
+  {
+    items: [{ icon: <LayoutGrid size={18} />, label: "Dashboard" }],
+  },
+  {
+    title: "Academics & Admission",
+    items: [
+      { icon: <Users size={18} />, label: "Students" },
+      { icon: <ClipboardList size={18} />, label: "Applications" },
+      { icon: <FileText size={18} />, label: "Documents" },
+      { icon: <GraduationCap size={18} />, label: "Partner Schools" },
+    ],
+  },
+  {
+    title: "Finance & Services",
+    items: [
+      { icon: <Banknote size={18} />, label: "Scholarships" },
+      { icon: <CreditCard size={18} />, label: "Payments" },
+      { icon: <IdCard size={18} />, label: "ID Cards" },
+    ],
+  },
+  {
+    title: "Access & Security",
+    items: [
+      { icon: <UserCog size={18} />, label: "User Management" },
+      { icon: <ShieldCheck size={18} />, label: "Roles & Permissions" },
+    ],
+  },
+  {
+    title: "System & Reports",
+    items: [
+      { icon: <BarChart3 size={18} />, label: "Reports" },
+      { icon: <History size={18} />, label: "Activity Logs" },
+      { icon: <Settings size={18} />, label: "Settings" },
+    ],
+  },
 ];
 
 //static
@@ -230,16 +277,101 @@ const QUICK_ACTIONS = [
 export default function Dashboard() {
   const [activeNav, setActiveNav] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchDashboardStats();
+      setDashboardData(data);
+    } catch (err: any) {
+      console.error("Failed to load dashboard stats:", err);
+      setError("Failed to connect to backend server or load database statistics.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
   const handleNavigation = (label: string) => {
     setActiveNav(label);
-
-    // Later you can replace this with React Router navigation
-    console.log(`Navigate to: ${label}`);
   };
+
   const handleLogout = () => {
     console.log("User logged out");
   };
+
+  // Dynamic stat cards constructed from database response
+  const dynamicStatCards = [
+    {
+      label: "Total Students",
+      value: dashboardData?.summary.totalStudents ?? 0,
+      change: "All registered students",
+      color: "#3b82f6",
+      bg: "#eff6ff",
+      icon: <Users size={22} color="#3b82f6" />,
+    },
+    {
+      label: "Students Today",
+      value: dashboardData?.summary.studentsToday ?? 0,
+      change: "Registered today",
+      color: "#10b981",
+      bg: "#ecfdf5",
+      icon: <UserPlus size={22} color="#10b981" />,
+    },
+    {
+      label: "Pending Documents",
+      value: dashboardData?.summary.pendingDocuments ?? 0,
+      change: "Needs review",
+      color: "#f59e0b",
+      bg: "#fffbeb",
+      icon: <FileText size={22} color="#f59e0b" />,
+    },
+    {
+      label: "Pending Applications",
+      value: dashboardData?.summary.pendingApplications ?? 0,
+      change: "Awaiting approval",
+      color: "#8b5cf6",
+      bg: "#f5f3ff",
+      icon: <ClipboardList size={22} color="#8b5cf6" />,
+    },
+    {
+      label: "Enrolled Students",
+      value: dashboardData?.summary.enrolledStudents ?? 0,
+      change: "Active enrollments",
+      color: "#06b6d4",
+      bg: "#ecfeff",
+      icon: <UserCheck size={22} color="#0891b2" />,
+    },
+    {
+      label: "Paid / Unpaid Students",
+      value: `${dashboardData?.summary.paymentStatusBreakdown.paid ?? 0} / ${dashboardData?.summary.paymentStatusBreakdown.unpaid ?? 0}`,
+      change: "Paid vs Unpaid count",
+      color: "#ec4899",
+      bg: "#fce7f3",
+      icon: <Banknote size={22} color="#db2777" />,
+    },
+  ];
+
+  const paymentBreakdownData = [
+    {
+      name: "Paid",
+      value: dashboardData?.summary.paymentStatusBreakdown.paid ?? 0,
+      color: "#10b981",
+    },
+    {
+      name: "Unpaid",
+      value: dashboardData?.summary.paymentStatusBreakdown.unpaid ?? 0,
+      color: "#ef4444",
+    },
+  ];
+
   return (
     <div
       style={{
@@ -255,12 +387,11 @@ export default function Dashboard() {
         sidebarOpen={sidebarOpen}
         activeNav={activeNav}
         handleNavigation={handleNavigation}
-        navItems={NAV_ITEMS}
+        navCategories={NAV_CATEGORIES}
         onLogout={handleLogout}
       />
 
       {/* main area */}
-
       <div
         style={{
           flex: 1,
@@ -271,412 +402,459 @@ export default function Dashboard() {
       >
         <Header
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
-          notificationCount={3}
+          notificationCount={dashboardData?.summary.pendingApplications ?? 0}
           onNotificationClick={() => console.log("Open Notifications")}
           onProfileClick={() => console.log("Open Profile Menu")}
         />
 
-
         {/* body */}
-        <main style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-          
+        <main className="custom-scrollbar" style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
           <>
             {/* Page Header */}
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "#1e293b" }}>
-                Dashboard
-              </div>
-              <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>
-                Welcome back, Admin! Here's what's happening in your school.
-              </div>
-            </div>
-
-            {/* STAT CARDS */}
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
-                gap: 14,
-                marginBottom: 20,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 18,
               }}
             >
-              {STAT_CARDS.map((card) => (
-                <div
-                  key={card.label}
-                  style={{
-                    background: "#fff",
-                    borderRadius: 10,
-                    padding: "16px 18px",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 46,
-                      height: 46,
-                      borderRadius: 10,
-                      background: card.bg,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 21,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {card.icon}
-                  </div>
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "#64748b",
-                        fontWeight: 500,
-                        marginBottom: 3,
-                      }}
-                    >
-                      {card.label}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 22,
-                        fontWeight: 700,
-                        color: "#1e293b",
-                        lineHeight: 1.1,
-                      }}
-                    >
-                      {card.value}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: card.changeType === "up" ? "#10b981" : "#94a3b8",
-                        marginTop: 3,
-                      }}
-                    >
-                      {card.change}
-                    </div>
-                  </div>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: "#1e293b" }}>
+                  {activeNav}
                 </div>
-              ))}
-            </div>
-
-            {/* QUICK ACTIONS */}
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: 10,
-                padding: "16px 18px",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                marginBottom: 20,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  marginBottom: 14,
-                }}
-              >
-                Quick Actions
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>
+                  {activeNav === "Dashboard"
+                    ? "Welcome back, Admin! Here's real-time dynamic data from your school database."
+                    : activeNav === "Students"
+                      ? "Manage student profiles, enrollments, and academic records."
+                      : activeNav === "Applications"
+                        ? "Review and process new student admission applications."
+                        : activeNav === "Documents"
+                          ? "Upload, view, and manage school documents and records."
+                          : activeNav === "Partner Schools"
+                            ? "Manage affiliated partner schools and educational institutions."
+                            : activeNav === "Scholarships"
+                              ? "Track scholarship programs, eligibility, and awarded students."
+                              : activeNav === "Payments"
+                                ? "View tuition fee payments, invoices, and financial transactions."
+                                : activeNav === "ID Cards"
+                                  ? "Generate, issue, and manage student and staff ID cards."
+                                  : activeNav === "User Management"
+                                    ? "Manage user accounts, admin staff, teachers, and system access."
+                                    : activeNav === "Roles & Permissions"
+                                      ? "Configure user roles, system permissions, and security access controls."
+                                      : activeNav === "Reports"
+                                        ? "Generate administrative analytics and performance reports."
+                                        : activeNav === "Activity Logs"
+                                          ? "Monitor system activity, audit trails, and user logs."
+                                          : activeNav === "Settings"
+                                            ? "Configure system preferences and portal settings."
+                                            : `Overview and management portal for ${activeNav.toLowerCase()}.`}
+                </div>
               </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: 12,
-                }}
-              >
-                {QUICK_ACTIONS.map((action) => (
-                  <button
-                    key={action.title}
-                    onClick={() => console.log(action.title)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "12px 14px",
-                      background: "#f8fafc",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      textAlign: "left",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 8,
-                        background: `${action.color}15`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 18,
-                      }}
-                    >
-                      {action.icon}
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#334155",
-                      }}
-                    >
-                      {action.title}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            {/* chart and notices */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 300px",
-                gap: 14,
-                marginBottom: 20,
-              }}
-            >
-              {/* student and teacher chart */}
-              <div
-                style={{
-                  background: "#fff",
-                  borderRadius: 10,
-                  padding: "16px 18px",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                }}
-              >
-                <div
+              {activeNav === "Dashboard" && (
+                <button
+                  type="button"
+                  onClick={loadDashboardData}
                   style={{
-                    fontSize: 14,
+                    padding: "8px 14px",
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontSize: 12,
                     fontWeight: 600,
-                    color: "#1e293b",
-                    marginBottom: 12,
-                  }}
-                >
-                  Students & Teachers Overview
-                </div>
-                <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={BAR_DATA}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 11, fill: "#94a3b8" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: "#94a3b8" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        fontSize: 12,
-                        borderRadius: 8,
-                        border: "none",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                      }}
-                    />
-                    <Legend
-                      iconType="circle"
-                      iconSize={8}
-                      wrapperStyle={{ fontSize: 12 }}
-                    />
-                    <Bar
-                      dataKey="Students"
-                      fill="#3b82f6"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="Teachers"
-                      fill="#10b981"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Attendance Chart */}
-              <div
-                style={{
-                  background: "#fff",
-                  borderRadius: 10,
-                  padding: "16px 18px",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "#1e293b",
-                    marginBottom: 12,
-                  }}
-                >
-                  Attendance Summary
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ position: "relative" }}>
-                    <PieChart width={180} height={190}>
-                      <Pie
-                        data={ATTENDANCE_DATA}
-                        cx={85}
-                        cy={90}
-                        innerRadius={55}
-                        outerRadius={75}
-                        dataKey="value"
-                        strokeWidth={2}
-                      >
-                        {ATTENDANCE_DATA.map((entry, index) => (
-                          <Cell key={index} fill={entry.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        textAlign: "center",
-                        pointerEvents: "none",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 700,
-                          color: "#1e293b",
-                        }}
-                      >
-                        84%
-                      </div>
-                      <div style={{ fontSize: 10, color: "#94a3b8" }}>
-                        Attendance
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 12,
-                      flex: 1,
-                    }}
-                  >
-                    {ATTENDANCE_DATA.map((item) => (
-                      <div
-                        key={item.name}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: "50%",
-                            background: item.color,
-                          }}
-                        />
-                        <div>
-                          <div
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: "#334155",
-                            }}
-                          >
-                            {item.name}
-                          </div>
-                          <div style={{ fontSize: 11, color: "#94a3b8" }}>
-                            {item.pct} ({item.value})
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Notices */}
-              <div
-                style={{
-                  background: "#fff",
-                  borderRadius: 10,
-                  padding: "16px 18px",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                }}
-              >
-                <div
-                  style={{
+                    color: "#334155",
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    marginBottom: 14,
                   }}
                 >
-                  <span style={{ fontSize: 16 }}>📢</span>
-                  <span
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "#1e293b",
-                    }}
-                  >
-                    Important Notices
-                  </span>
+                  <span>🔄</span> Refresh Data
+                </button>
+              )}
+            </div>
+
+            {/* Render full dashboard widgets only on Dashboard tab */}
+            {activeNav === "Dashboard" && (
+              <>
+                {/* DYNAMIC STAT CARDS GRID */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: 14,
+                    marginBottom: 20,
+                  }}
+                >
+                  {dynamicStatCards.map((card) => (
+                    <div
+                      key={card.label}
+                      style={{
+                        background: "#fff",
+                        borderRadius: 10,
+                        padding: "16px 18px",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 46,
+                          height: 46,
+                          borderRadius: 10,
+                          background: card.bg,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {card.icon}
+                      </div>
+                      <div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "#64748b",
+                            fontWeight: 500,
+                            marginBottom: 3,
+                          }}
+                        >
+                          {card.label}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 22,
+                            fontWeight: 700,
+                            color: "#1e293b",
+                            lineHeight: 1.1,
+                          }}
+                        >
+                          {loading ? "..." : card.value}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "#10b981",
+                            marginTop: 3,
+                          }}
+                        >
+                          {card.change}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {NOTICES.map((notice, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      borderBottom:
-                        index < NOTICES.length - 1
-                          ? "1px solid #f1f5f9"
-                          : "none",
-                      paddingBottom: index < NOTICES.length - 1 ? 12 : 0,
-                      marginBottom: index < NOTICES.length - 1 ? 12 : 0,
-                    }}
-                  >
+
+                {/* CHARTS AND RECENT ACTIVITY GRID */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 340px",
+                    gap: 16,
+                    marginBottom: 20,
+                  }}
+                >
+                  {/* Left Column: Bar Chart & Recent Students Table */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {/* BAR CHART */}
                     <div
                       style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#1e293b",
-                        marginBottom: 2,
+                        background: "#fff",
+                        borderRadius: 10,
+                        padding: "16px 18px",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
                       }}
                     >
-                      {notice.title}
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#1e293b",
+                          marginBottom: 12,
+                        }}
+                      >
+                        Daily Enrollment Trends (Last 7 Days)
+                      </div>
+                      <ResponsiveContainer width="100%" height={220}>
+                        <BarChart data={dashboardData?.chartData || []}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis
+                            dataKey="name"
+                            tick={{ fontSize: 11, fill: "#94a3b8" }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 11, fill: "#94a3b8" }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              fontSize: 12,
+                              borderRadius: 8,
+                              border: "none",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                            }}
+                          />
+                          <Legend
+                            iconType="circle"
+                            iconSize={8}
+                            wrapperStyle={{ fontSize: 12 }}
+                          />
+                          <Bar
+                            dataKey="Students"
+                            fill="#3b82f6"
+                            radius={[4, 4, 0, 0]}
+                          />
+                          <Bar
+                            dataKey="Applications"
+                            fill="#8b5cf6"
+                            radius={[4, 4, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
+
+                    {/* RECENT STUDENTS TABLE */}
                     <div
                       style={{
-                        fontSize: 11,
-                        color: "#64748b",
-                        marginBottom: 4,
+                        background: "#fff",
+                        borderRadius: 10,
+                        padding: "16px 18px",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
                       }}
                     >
-                      {notice.desc}
-                    </div>
-                    <div style={{ fontSize: 10, color: "#94a3b8" }}>
-                      {notice.date}
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#1e293b",
+                          marginBottom: 12,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span>Recent Students</span>
+                        <span style={{ fontSize: 11, color: "#64748b", fontWeight: 400 }}>
+                          Live Database Records
+                        </span>
+                      </div>
+
+                      {(!dashboardData?.recentStudents || dashboardData.recentStudents.length === 0) ? (
+                        <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                          No student records available in database.
+                        </div>
+                      ) : (
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                            <thead>
+                              <tr style={{ borderBottom: "1px solid #f1f5f9", textAlign: "left" }}>
+                                <th style={{ padding: "8px 10px", color: "#64748b", fontWeight: 600 }}>Code</th>
+                                <th style={{ padding: "8px 10px", color: "#64748b", fontWeight: 600 }}>Name</th>
+                                <th style={{ padding: "8px 10px", color: "#64748b", fontWeight: 600 }}>Department</th>
+                                <th style={{ padding: "8px 10px", color: "#64748b", fontWeight: 600 }}>Status</th>
+                                <th style={{ padding: "8px 10px", color: "#64748b", fontWeight: 600 }}>Payment</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {dashboardData.recentStudents.map((stu) => (
+                                <tr key={stu.id} style={{ borderBottom: "1px solid #f8fafc" }}>
+                                  <td style={{ padding: "10px", fontWeight: 600, color: "#3b82f6" }}>
+                                    {stu.studentCode}
+                                  </td>
+                                  <td style={{ padding: "10px", color: "#1e293b", fontWeight: 500 }}>
+                                    {stu.name}
+                                  </td>
+                                  <td style={{ padding: "10px", color: "#64748b" }}>
+                                    {stu.department || "General"}
+                                  </td>
+                                  <td style={{ padding: "10px" }}>
+                                    <span
+                                      style={{
+                                        padding: "3px 8px",
+                                        borderRadius: 12,
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                        background: stu.status === "ENROLLED" ? "#dcfce7" : "#fef3c7",
+                                        color: stu.status === "ENROLLED" ? "#15803d" : "#b45309",
+                                      }}
+                                    >
+                                      {stu.status}
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: "10px" }}>
+                                    <span
+                                      style={{
+                                        padding: "3px 8px",
+                                        borderRadius: 12,
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                        background: stu.paymentStatus === "PAID" ? "#e0e7ff" : "#fee2e2",
+                                        color: stu.paymentStatus === "PAID" ? "#4338ca" : "#dc2626",
+                                      }}
+                                    >
+                                      {stu.paymentStatus}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+
+                  {/* Right Column: Payment Pie & Recent Activities */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {/* PAID / UNPAID PIE CHART */}
+                    <div
+                      style={{
+                        background: "#fff",
+                        borderRadius: 10,
+                        padding: "16px 18px",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#1e293b",
+                          marginBottom: 8,
+                        }}
+                      >
+                        Paid vs Unpaid Students
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <PieChart width={200} height={180}>
+                          <Pie
+                            data={paymentBreakdownData}
+                            cx={100}
+                            cy={85}
+                            innerRadius={50}
+                            outerRadius={70}
+                            dataKey="value"
+                            strokeWidth={2}
+                          >
+                            {paymentBreakdownData.map((entry, index) => (
+                              <Cell key={index} fill={entry.color} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-around",
+                          marginTop: 4,
+                          fontSize: 12,
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#10b981" }} />
+                          <span style={{ color: "#334155", fontWeight: 600 }}>
+                            Paid ({dashboardData?.summary.paymentStatusBreakdown.paid ?? 0})
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444" }} />
+                          <span style={{ color: "#334155", fontWeight: 600 }}>
+                            Unpaid ({dashboardData?.summary.paymentStatusBreakdown.unpaid ?? 0})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RECENT ACTIVITIES */}
+                    <div
+                      style={{
+                        background: "#fff",
+                        borderRadius: 10,
+                        padding: "16px 18px",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                        flex: 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          marginBottom: 14,
+                        }}
+                      >
+                        <Clock size={16} color="#3b82f6" />
+                        <span
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: "#1e293b",
+                          }}
+                        >
+                          Recent Activities
+                        </span>
+                      </div>
+
+                      {(!dashboardData?.recentActivities || dashboardData.recentActivities.length === 0) ? (
+                        <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 12, textAlign: "center" }}>
+                          No recent system activities.
+                        </div>
+                      ) : (
+                        dashboardData.recentActivities.map((act, index) => (
+                          <div
+                            key={act.id || index}
+                            style={{
+                              borderBottom:
+                                index < dashboardData.recentActivities.length - 1
+                                  ? "1px solid #f1f5f9"
+                                  : "none",
+                              paddingBottom: 10,
+                              marginBottom: 10,
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: "#1e293b",
+                                marginBottom: 2,
+                              }}
+                            >
+                              {act.title}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "#64748b",
+                                marginBottom: 4,
+                              }}
+                            >
+                              {act.description}
+                            </div>
+                            <div style={{ fontSize: 10, color: "#94a3b8" }}>
+                              {new Date(act.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         </main>
       </div>
     </div>
   );
 }
+
