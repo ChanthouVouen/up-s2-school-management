@@ -13,7 +13,7 @@
 ## Getting Started
 
 ```bash
-cd ./s2-frontend-school-management
+cd ./frontend
 ```
 
 ```bash
@@ -69,7 +69,7 @@ Built with ❤️ using React Router.
 ## Get started
 
    ```bash
-   cd ./s2-backend-school-management
+   cd ./backend
    ```
 
    ```bash

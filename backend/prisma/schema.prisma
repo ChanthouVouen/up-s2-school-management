@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum StudentStatus {
+  ENROLLED
+  PENDING
+  GRADUATED
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  PARTIAL
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DocumentType {
+  DIPLOMA
+  ID
+  TRANSCRIPT
+  CERTIFICATE
+  OTHER
+}
+
+enum ActivityType {
+  STUDENT
+  TEACHER
+  DOCUMENT
+  APPLICATION
+  PAYMENT
+  SYSTEM
+}
+
+model Role {
+  id    String @id @default(uuid())
+  name  String @unique
+  users User[]
+  permissions Permission[] @relation("RolePermissions") 
+
+  @@map("roles")
+}
+
+model Permission {
+  id    String @id @default(uuid())
+  name  String @unique // e.g., "post:create", "post:delete"
+  roles Role[] @relation("RolePermissions")
+
+  @@map("permissions")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model BlacklistedToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("blacklisted_tokens")
+}
+
+model Student {
+  id            Int              @id @default(autoincrement())
+  studentCode   String           @unique
+  name          String
+  email         String?
+  phone         String?
+  gender        String?
+  dob           DateTime?
+  address       String?
+  status        StudentStatus    @default(ENROLLED)
+  paymentStatus PaymentStatus    @default(UNPAID)
+  department    String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  applications  Application[]
+  documents     Document[]
+  histories     StudentHistory[]
+
+  @@map("students")
+}
+
+model StudentHistory {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  action      String
+  description String
+  performedBy String?  @default("Admin")
+  createdAt   DateTime @default(now())
+
+  @@map("student_histories")
+}
+
+model Application {
+  id            Int               @id @default(autoincrement())
+  applicantName String
+  email         String
+  program       String
+  status        ApplicationStatus @default(PENDING)
+  studentId     Int?
+  student       Student?          @relation(fields: [studentId], references: [id])
+  createdAt     DateTime          @default(now())
+
+  @@map("applications")
+}
+
+model Document {
+  id        Int            @id @default(autoincrement())
+  title     String
+  type      DocumentType   @default(OTHER)
+  status    DocumentStatus @default(PENDING)
+  studentId Int?
+  student   Student?       @relation(fields: [studentId], references: [id])
+  createdAt DateTime       @default(now())
+
+  @@map("documents")
+}
+
+model ActivityLog {
+  id          Int           @id @default(autoincrement())
+  title       String
+  description String
+  type        ActivityType?
+  createdAt   DateTime      @default(now())
+
+  @@map("activity_logs")
+}
