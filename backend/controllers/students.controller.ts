@@ -43,6 +43,13 @@ export const getStudents: RequestHandler = asyncHandler(async (req, res) => {
       take: limitNum,
       orderBy: { createdAt: 'desc' },
       include: {
+        partnerSchool: {
+          include: {
+            mous: {
+              orderBy: { endDate: 'desc' },
+            },
+          },
+        },
         _count: {
           select: { documents: true, applications: true, histories: true },
         },
@@ -74,6 +81,13 @@ export const getStudentById: RequestHandler = asyncHandler(async (req, res) => {
   const student = await prisma.student.findUnique({
     where: { id: studentId },
     include: {
+      partnerSchool: {
+        include: {
+          mous: {
+            orderBy: { endDate: 'desc' },
+          },
+        },
+      },
       applications: { orderBy: { createdAt: 'desc' } },
       documents: { orderBy: { createdAt: 'desc' } },
       histories: { orderBy: { createdAt: 'desc' } },
@@ -90,7 +104,7 @@ export const getStudentById: RequestHandler = asyncHandler(async (req, res) => {
 
 // POST /students - Create new student
 export const createStudent: RequestHandler = asyncHandler(async (req, res) => {
-  const { name, email, phone, gender, dob, address, status, paymentStatus, department, studentCode } = req.body;
+  const { name, email, phone, gender, dob, address, status, paymentStatus, department, studentCode, partnerSchoolId } = req.body;
 
   if (!name || name.trim() === '') {
     res.status(400).json({ message: 'Student name is required' });
@@ -117,6 +131,7 @@ export const createStudent: RequestHandler = asyncHandler(async (req, res) => {
       status: status && Object.values(StudentStatus).includes(status) ? status : StudentStatus.ENROLLED,
       paymentStatus: paymentStatus && Object.values(PaymentStatus).includes(paymentStatus) ? paymentStatus : PaymentStatus.UNPAID,
       department: department ? department.trim() : null,
+      partnerSchoolId: partnerSchoolId ? Number(partnerSchoolId) : null,
       histories: {
         create: {
           action: 'STUDENT_CREATED',
@@ -126,6 +141,13 @@ export const createStudent: RequestHandler = asyncHandler(async (req, res) => {
       },
     },
     include: {
+      partnerSchool: {
+        include: {
+          mous: {
+            orderBy: { endDate: 'desc' },
+          },
+        },
+      },
       histories: true,
     },
   });
@@ -161,7 +183,7 @@ export const updateStudent: RequestHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const { name, email, phone, gender, dob, address, status, paymentStatus, department } = req.body;
+  const { name, email, phone, gender, dob, address, status, paymentStatus, department, partnerSchoolId } = req.body;
 
   // Detect modified fields for audit trail
   const changes: string[] = [];
@@ -169,6 +191,7 @@ export const updateStudent: RequestHandler = asyncHandler(async (req, res) => {
   if (status && status !== existingStudent.status) changes.push(`Status changed from "${existingStudent.status}" to "${status}"`);
   if (paymentStatus && paymentStatus !== existingStudent.paymentStatus) changes.push(`Payment status changed from "${existingStudent.paymentStatus}" to "${paymentStatus}"`);
   if (department !== undefined && department !== existingStudent.department) changes.push(`Department updated to "${department || 'None'}"`);
+  if (partnerSchoolId !== undefined && partnerSchoolId !== existingStudent.partnerSchoolId) changes.push(`Partner Institution updated.`);
 
   const updatedStudent = await prisma.student.update({
     where: { id: studentId },
@@ -182,6 +205,16 @@ export const updateStudent: RequestHandler = asyncHandler(async (req, res) => {
       status: status && Object.values(StudentStatus).includes(status) ? status : existingStudent.status,
       paymentStatus: paymentStatus && Object.values(PaymentStatus).includes(paymentStatus) ? paymentStatus : existingStudent.paymentStatus,
       department: department !== undefined ? (department ? department.trim() : null) : existingStudent.department,
+      partnerSchoolId: partnerSchoolId !== undefined ? (partnerSchoolId ? Number(partnerSchoolId) : null) : existingStudent.partnerSchoolId,
+    },
+    include: {
+      partnerSchool: {
+        include: {
+          mous: {
+            orderBy: { endDate: 'desc' },
+          },
+        },
+      },
     },
   });
 
@@ -198,7 +231,7 @@ export const updateStudent: RequestHandler = asyncHandler(async (req, res) => {
     await prisma.activityLog.create({
       data: {
         title: 'Student Updated',
-        description: `Updated profile for ${updatedStudent.name} (${updatedStudent.studentCode}).`,
+        description: `Student profile ${updatedStudent.name} (${updatedStudent.studentCode}) updated.`,
         type: 'STUDENT',
       },
     });
@@ -207,7 +240,7 @@ export const updateStudent: RequestHandler = asyncHandler(async (req, res) => {
   res.status(200).json(updatedStudent);
 });
 
-// PATCH /students/:id/status - Quick update status or paymentStatus
+// PATCH /students/:id/status - Update status or payment status only
 export const updateStudentStatus: RequestHandler = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const studentId = parseInt(String(id), 10);
@@ -217,61 +250,26 @@ export const updateStudentStatus: RequestHandler = asyncHandler(async (req, res)
     return;
   }
 
-  const { status, paymentStatus } = req.body;
-
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-  });
-
-  if (!student) {
+  const existingStudent = await prisma.student.findUnique({ where: { id: studentId } });
+  if (!existingStudent) {
     res.status(404).json({ message: 'Student not found' });
     return;
   }
 
-  const updateData: any = {};
-  const historyLogs: string[] = [];
+  const { status, paymentStatus } = req.body;
 
-  if (status && Object.values(StudentStatus).includes(status)) {
-    updateData.status = status;
-    historyLogs.push(`Status changed to ${status}`);
-  }
-
-  if (paymentStatus && Object.values(PaymentStatus).includes(paymentStatus)) {
-    updateData.paymentStatus = paymentStatus;
-    historyLogs.push(`Payment status changed to ${paymentStatus}`);
-  }
-
-  if (Object.keys(updateData).length === 0) {
-    res.status(400).json({ message: 'No valid status or paymentStatus provided' });
-    return;
-  }
-
-  const updated = await prisma.student.update({
+  const updatedStudent = await prisma.student.update({
     where: { id: studentId },
-    data: updateData,
-  });
-
-  await prisma.studentHistory.create({
     data: {
-      studentId,
-      action: 'STATUS_CHANGED',
-      description: historyLogs.join('; '),
-      performedBy: 'Admin',
+      status: status && Object.values(StudentStatus).includes(status) ? status : existingStudent.status,
+      paymentStatus: paymentStatus && Object.values(PaymentStatus).includes(paymentStatus) ? paymentStatus : existingStudent.paymentStatus,
     },
   });
 
-  await prisma.activityLog.create({
-    data: {
-      title: 'Student Status Updated',
-      description: `Updated status for ${updated.name} (${updated.studentCode}): ${historyLogs.join(', ')}.`,
-      type: 'STUDENT',
-    },
-  });
-
-  res.status(200).json(updated);
+  res.status(200).json(updatedStudent);
 });
 
-// DELETE /students/:id - Delete student
+// DELETE /students/:id - Delete student profile
 export const deleteStudent: RequestHandler = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const studentId = parseInt(String(id), 10);
@@ -281,23 +279,21 @@ export const deleteStudent: RequestHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const student = await prisma.student.findUnique({
+  const existingStudent = await prisma.student.findUnique({
     where: { id: studentId },
   });
 
-  if (!student) {
+  if (!existingStudent) {
     res.status(404).json({ message: 'Student not found' });
     return;
   }
 
-  await prisma.student.delete({
-    where: { id: studentId },
-  });
+  await prisma.student.delete({ where: { id: studentId } });
 
   await prisma.activityLog.create({
     data: {
-      title: 'Student Removed',
-      description: `Deleted student record ${student.name} (${student.studentCode}).`,
+      title: 'Student Profile Deleted',
+      description: `Student ${existingStudent.name} (${existingStudent.studentCode}) was deleted.`,
       type: 'STUDENT',
     },
   });
@@ -305,7 +301,7 @@ export const deleteStudent: RequestHandler = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Student deleted successfully', id: studentId });
 });
 
-// GET /students/:id/history - Get student audit trail history
+// GET /students/:id/history - Get student audit history
 export const getStudentHistory: RequestHandler = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const studentId = parseInt(String(id), 10);
@@ -316,7 +312,7 @@ export const getStudentHistory: RequestHandler = asyncHandler(async (req, res) =
   }
 
   const histories = await prisma.studentHistory.findMany({
-    where: { studentId },
+    where: { studentId: studentId },
     orderBy: { createdAt: 'desc' },
   });
 

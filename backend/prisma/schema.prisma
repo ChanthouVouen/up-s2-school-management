@@ -47,6 +47,33 @@ enum ActivityType {
   APPLICATION
   PAYMENT
   SYSTEM
+  PARTNER_SCHOOL
+}
+
+enum PartnerType {
+  HIGH_SCHOOL
+  UNIVERSITY
+  COMPANY
+  ORGANIZATION
+}
+
+enum PartnerSchoolStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_RENEWAL
+  EXPIRED
+}
+
+enum MouStatus {
+  ACTIVE
+  EXPIRED
+  PENDING_RENEWAL
+  TERMINATED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
 }
 
 model Role {
@@ -89,22 +116,24 @@ model BlacklistedToken {
 }
 
 model Student {
-  id            Int              @id @default(autoincrement())
-  studentCode   String           @unique
-  name          String
-  email         String?
-  phone         String?
-  gender        String?
-  dob           DateTime?
-  address       String?
-  status        StudentStatus    @default(ENROLLED)
-  paymentStatus PaymentStatus    @default(UNPAID)
-  department    String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  applications  Application[]
-  documents     Document[]
-  histories     StudentHistory[]
+  id              Int              @id @default(autoincrement())
+  studentCode     String           @unique
+  name            String
+  email           String?
+  phone           String?
+  gender          String?
+  dob             DateTime?
+  address         String?
+  status          StudentStatus    @default(ENROLLED)
+  paymentStatus   PaymentStatus    @default(UNPAID)
+  department      String?
+  partnerSchoolId Int?
+  partnerSchool   PartnerSchool?   @relation(fields: [partnerSchoolId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  applications    Application[]
+  documents       Document[]
+  histories       StudentHistory[]
 
   @@map("students")
 }
@@ -154,4 +183,47 @@ model ActivityLog {
   createdAt   DateTime      @default(now())
 
   @@map("activity_logs")
+}
+
+model PartnerSchool {
+  id            Int                 @id @default(autoincrement())
+  name          String
+  type          PartnerType         @default(HIGH_SCHOOL)
+  city          String?
+  address       String?
+  website       String?
+  logoUrl       String?
+  contactPerson String?
+  contactEmail  String?
+  contactPhone  String?
+  status        PartnerSchoolStatus @default(ACTIVE)
+  notes         String?             @db.Text
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  students      Student[]
+  mous          Mou[]
+
+  @@map("partner_schools")
+}
+
+model Mou {
+  id                  Int          @id @default(autoincrement())
+  partnerSchoolId     Int
+  partnerSchool       PartnerSchool @relation(fields: [partnerSchoolId], references: [id], onDelete: Cascade)
+  mouTitle            String
+  mouNumber           String?
+  signDate            DateTime
+  startDate           DateTime
+  endDate             DateTime
+  status              MouStatus    @default(ACTIVE)
+  discountType        DiscountType @default(PERCENTAGE)
+  discountValue       Float        @default(0)
+  maxEligibleStudents Int?
+  mouDocumentUrl      String?
+  scope               String?      @db.Text
+  notes               String?      @db.Text
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@map("mous")
 }

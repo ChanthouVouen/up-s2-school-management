@@ -12,6 +12,7 @@ import permissionsRouter from './routes/permissions';
 import authRouter from './routes/auth';
 import dashboardRouter from './routes/dashboard';
 import studentsRouter from './routes/students';
+import partnerSchoolsRouter from './routes/partnerSchools';
 import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
 
@@ -32,6 +33,8 @@ app.use('/dashboard', dashboardRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/students', studentsRouter);
 app.use('/api/students', studentsRouter);
+app.use('/partner-schools', partnerSchoolsRouter);
+app.use('/api/partner-schools', partnerSchoolsRouter);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
