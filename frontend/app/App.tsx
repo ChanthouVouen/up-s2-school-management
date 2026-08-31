@@ -9,20 +9,32 @@ import ProtectedRoute from "./ProtectedRoute";
 import StudentsPage from "./pages/admin/students";
 import UserManagementPage from "./pages/admin/users";
 import ComingSoonPage from "./pages/admin/ComingSoonPage";
-import { ADMIN_ONLY_PATHS, NAV_CATEGORIES } from "./layouts/adminNav";
+import { NAV_CATEGORIES, PATH_PERMISSIONS } from "./layouts/adminNav";
 import Dashboard from './pages/admin/AdminDashboard';
+import RoleBasePermission from "./pages/admin/role-permission";
 
 
 const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
+  "/": Dashboard,
   "/students": StudentsPage,
   "/users": UserManagementPage,
+  "/role-permission": RoleBasePermission,
 };
 
-const allAdminPaths = NAV_CATEGORIES.flatMap((category) => category.items.map((item) => item.path)).filter(
-  (path) => path !== "/",
-);
-const adminOnlyPaths = allAdminPaths.filter((path) => ADMIN_ONLY_PATHS.includes(path));
-const generalPaths = allAdminPaths.filter((path) => !ADMIN_ONLY_PATHS.includes(path));
+const allAdminPaths = NAV_CATEGORIES.flatMap((category) => category.items.map((item) => item.path));
+
+const openPaths = allAdminPaths.filter((path) => !PATH_PERMISSIONS[path]);
+
+// Group permission-gated paths by the permission they require, so routes
+// sharing a permission share one ProtectedRoute wrapper.
+const pathsByPermission = new Map<string, string[]>();
+for (const path of allAdminPaths) {
+  const permission = PATH_PERMISSIONS[path];
+  if (!permission) continue;
+  const group = pathsByPermission.get(permission) ?? [];
+  group.push(path);
+  pathsByPermission.set(permission, group);
+}
 
 function renderAdminRoute(path: string) {
   const Page = IMPLEMENTED_ADMIN_PAGES[path] ?? ComingSoonPage;
@@ -37,16 +49,17 @@ export function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Any authenticated user (ADMIN or STAFF) */}
+      {/* Any authenticated user — no specific permission required */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Dashboard />} />
-        {generalPaths.map(renderAdminRoute)}
+        {openPaths.map(renderAdminRoute)}
       </Route>
 
-      {/* ADMIN-only routes, e.g. User Management */}
-      <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-        {adminOnlyPaths.map(renderAdminRoute)}
-      </Route>
+      {/* Permission-gated routes, one ProtectedRoute per required permission */}
+      {Array.from(pathsByPermission.entries()).map(([permission, paths]) => (
+        <Route key={permission} element={<ProtectedRoute requiredPermissions={[permission]} />}>
+          {paths.map(renderAdminRoute)}
+        </Route>
+      ))}
     </Routes>
   );
 }

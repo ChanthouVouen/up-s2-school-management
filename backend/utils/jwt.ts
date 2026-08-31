@@ -8,6 +8,7 @@ const JWT_EXPIRES_IN = env.jwtExpiresIn as SignOptions['expiresIn'];
 export interface AuthTokenClaims {
   sub: string;
   role: RoleName;
+  permissions: string[];
 }
 
 export interface AuthTokenPayload extends AuthTokenClaims {

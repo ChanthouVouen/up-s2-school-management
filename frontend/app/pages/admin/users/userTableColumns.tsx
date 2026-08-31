@@ -8,9 +8,11 @@ import { getRoleBadgeStyle } from "~/utils/userUtils";
 interface GetUserTableColumnsOptions {
   onEdit: (user: AppUser) => void;
   onDelete: (user: AppUser) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
-export function getUserTableColumns({ onEdit, onDelete }: GetUserTableColumnsOptions): TableColumn<AppUser>[] {
+export function getUserTableColumns({ onEdit, onDelete, canEdit, canDelete }: GetUserTableColumnsOptions): TableColumn<AppUser>[] {
   return [
     {
       key: "name",
@@ -40,17 +42,21 @@ export function getUserTableColumns({ onEdit, onDelete }: GetUserTableColumnsOpt
       align: "right",
       render: (user) => (
         <div style={{ display: "inline-flex", gap: 6 }}>
-          <Button variant="icon" title="Edit User" onClick={() => onEdit(user)} style={{ color: "#d97706" }}>
-            <Edit2 size={14} />
-          </Button>
-          <Button
-            variant="icon"
-            title="Delete User"
-            onClick={() => onDelete(user)}
-            style={{ color: "#dc2626", background: "#fee2e2" }}
-          >
-            <Trash2 size={14} />
-          </Button>
+          {canEdit && (
+            <Button variant="icon" title="Edit User" onClick={() => onEdit(user)} style={{ color: "#d97706" }}>
+              <Edit2 size={14} />
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              variant="icon"
+              title="Delete User"
+              onClick={() => onDelete(user)}
+              style={{ color: "#dc2626", background: "#fee2e2" }}
+            >
+              <Trash2 size={14} />
+            </Button>
+          )}
         </div>
       ),
     },

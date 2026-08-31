@@ -19,6 +19,8 @@ import Pagination from "./ui/Pagination";
 import Badge from "./ui/Badge";
 import Toast from "./ui/Toast";
 import { useToast } from "../hooks/useToast";
+import { useAuth } from "../auth/AuthContext";
+import { PERMISSIONS } from "../types/permissions";
 import {
   Search,
   Plus,
@@ -97,6 +99,10 @@ export default function StudentManagement() {
   const [studentToDelete, setStudentToDelete] = useState<{ id: number; name: string; code: string } | null>(null);
 
   const { toast, showToast } = useToast();
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission(PERMISSIONS.STUDENT_CREATE);
+  const canUpdate = hasPermission(PERMISSIONS.STUDENT_UPDATE);
+  const canDelete = hasPermission(PERMISSIONS.STUDENT_DELETE);
 
   // Selected Student State
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -327,17 +333,21 @@ export default function StudentManagement() {
           <Button variant="icon" title="View Details" onClick={() => setViewingDetailId(stu.id)} style={{ color: "#3b82f6" }}>
             <Eye size={14} />
           </Button>
-          <Button variant="icon" title="Edit Student" onClick={() => handleOpenEditModal(stu)} style={{ color: "#d97706" }}>
-            <Edit2 size={14} />
-          </Button>
-          <Button
-            variant="icon"
-            title="Delete Student"
-            onClick={() => promptDeleteConfirmation(stu.id, stu.name, stu.studentCode)}
-            style={{ color: "#dc2626", background: "#fee2e2" }}
-          >
-            <Trash2 size={14} />
-          </Button>
+          {canUpdate && (
+            <Button variant="icon" title="Edit Student" onClick={() => handleOpenEditModal(stu)} style={{ color: "#d97706" }}>
+              <Edit2 size={14} />
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              variant="icon"
+              title="Delete Student"
+              onClick={() => promptDeleteConfirmation(stu.id, stu.name, stu.studentCode)}
+              style={{ color: "#dc2626", background: "#fee2e2" }}
+            >
+              <Trash2 size={14} />
+            </Button>
+          )}
         </div>
       ),
     },
@@ -428,9 +438,11 @@ export default function StudentManagement() {
             Refresh
           </Button>
 
-          <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenAddModal}>
-            Add Student
-          </Button>
+          {canCreate && (
+            <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenAddModal}>
+              Add Student
+            </Button>
+          )}
         </div>
       </div>
 

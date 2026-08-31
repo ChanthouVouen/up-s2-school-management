@@ -53,8 +53,17 @@ model Role {
   id    String @id @default(uuid())
   name  String @unique
   users User[]
+  permissions Permission[] @relation("RolePermissions") 
 
   @@map("roles")
+}
+
+model Permission {
+  id    String @id @default(uuid())
+  name  String @unique // e.g., "post:create", "post:delete"
+  roles Role[] @relation("RolePermissions")
+
+  @@map("permissions")
 }
 
 model User {

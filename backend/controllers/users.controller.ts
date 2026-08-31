@@ -31,7 +31,7 @@ export const getUsers: RequestHandler = asyncHandler(async (req, res) => {
       skip,
       take: limitNum,
       orderBy: { createdAt: 'desc' },
-      include: { role: true },
+      include: { role: { include: { permissions: true } } },
     }),
   ]);
 
@@ -73,7 +73,7 @@ export const createUser: RequestHandler = asyncHandler(async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: { name, email, password: hashedPassword, roleId },
-    include: { role: true },
+    include: { role: { include: { permissions: true } } },
   });
 
   res.status(201).json(sanitizeUser(user));
@@ -120,7 +120,7 @@ export const updateUser: RequestHandler = asyncHandler(async (req, res) => {
       roleId: roleId ?? existingUser.roleId,
       ...(password ? { password: await bcrypt.hash(password, 10) } : {}),
     },
-    include: { role: true },
+    include: { role: { include: { permissions: true } } },
   });
 
   res.status(200).json(sanitizeUser(updated));

@@ -1,16 +1,17 @@
 import express from 'express';
-import { authenticate, requireRole } from '../middlewares/auth.middleware';
+import { authenticate, requirePermission } from '../middlewares/auth.middleware';
 import { getUsers, createUser, updateUser, deleteUser } from '../controllers/users.controller';
+import { PERMISSIONS } from '../types/permissions';
 
 const router = express.Router();
 
-router.use(authenticate, requireRole('ADMIN'));
+router.use(authenticate);
 
 /**
  * @swagger
  * /users:
  *   get:
- *     summary: List users with search & pagination (admin only)
+ *     summary: List users with search & pagination
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -20,9 +21,9 @@ router.use(authenticate, requireRole('ADMIN'));
  *       401:
  *         description: Missing, invalid, expired, or revoked token
  *       403:
- *         description: Caller is not an admin
+ *         description: Caller lacks user:view permission
  *   post:
- *     summary: Create a new user (admin only)
+ *     summary: Create a new user
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -34,14 +35,14 @@ router.use(authenticate, requireRole('ADMIN'));
  *       409:
  *         description: Email already in use
  */
-router.get('/', getUsers);
-router.post('/', createUser);
+router.get('/', requirePermission(PERMISSIONS.USER_VIEW), getUsers);
+router.post('/', requirePermission(PERMISSIONS.USER_CREATE), createUser);
 
 /**
  * @swagger
  * /users/{id}:
  *   put:
- *     summary: Update a user (admin only)
+ *     summary: Update a user
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -51,7 +52,7 @@ router.post('/', createUser);
  *       404:
  *         description: User not found
  *   delete:
- *     summary: Delete a user (admin only)
+ *     summary: Delete a user
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -61,7 +62,7 @@ router.post('/', createUser);
  *       404:
  *         description: User not found
  */
-router.put('/:id', updateUser);
-router.delete('/:id', deleteUser);
+router.put('/:id', requirePermission(PERMISSIONS.USER_UPDATE), updateUser);
+router.delete('/:id', requirePermission(PERMISSIONS.USER_DELETE), deleteUser);
 
 export default router;
