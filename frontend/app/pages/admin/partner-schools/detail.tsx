@@ -21,6 +21,8 @@ import AdminLayout from "../../../layouts/AdminLayout";
 import Button from "../../../components/ui/Button";
 import Badge from "../../../components/ui/Badge";
 import ConfirmModal from "../../../components/users/ConfirmModal";
+import { useAuth } from "../../../auth/AuthContext";
+import { PERMISSIONS } from "../../../types/permissions";
 import {
   PartnerSchool,
   Mou,
@@ -38,6 +40,11 @@ export default function PartnerSchoolDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const partnerSchoolId = Number(id);
+
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission(PERMISSIONS.PARTNER_SCHOOL_CREATE);
+  const canUpdate = hasPermission(PERMISSIONS.PARTNER_SCHOOL_UPDATE);
+  const canDelete = hasPermission(PERMISSIONS.PARTNER_SCHOOL_DELETE);
 
   const [activeTab, setActiveTab] = useState<"overview" | "mous" | "students">("overview");
   const [school, setSchool] = useState<PartnerSchool | null>(null);
@@ -476,12 +483,16 @@ export default function PartnerSchoolDetailPage() {
                             <Badge bg={statusInfo.bg} color={statusInfo.color} icon={statusInfo.icon}>
                               {statusInfo.label}
                             </Badge>
-                            <Button variant="icon" title="Edit MOU" onClick={() => { setEditingMou(mou); setMouModalOpen(true); }}>
-                              <Edit2 size={15} />
-                            </Button>
-                            <Button variant="icon" title="Delete MOU" onClick={() => { setMouToDelete(mou); setDeleteMouConfirmOpen(true); }} style={{ color: "#dc2626", background: "#fee2e2" }}>
-                              <Trash2 size={15} />
-                            </Button>
+                            {canUpdate && (
+                              <Button variant="icon" title="Edit MOU" onClick={() => { setEditingMou(mou); setMouModalOpen(true); }}>
+                                <Edit2 size={15} />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button variant="icon" title="Delete MOU" onClick={() => { setMouToDelete(mou); setDeleteMouConfirmOpen(true); }} style={{ color: "#dc2626", background: "#fee2e2" }}>
+                                <Trash2 size={15} />
+                              </Button>
+                            )}
                           </div>
                         </div>
 
