@@ -27,6 +27,9 @@ import {
     Save,
     Plus,
 } from 'lucide-react';
+import Modal from "~/components/ui/Modal";
+import FormField from "~/components/ui/FormField";
+import { createRole } from "~/services/rolePermission";
 
 const MODULE_META: Record<string, { label: string; icon: ComponentType<{ className?: string }> }> = {
     dashboard: { label: 'Dashboard', icon: LayoutGrid },
@@ -72,8 +75,33 @@ export default function RoleBasePermission() {
     const [saving, setSaving] = useState(false);
 
     const { toast, showToast } = useToast();
-  const { hasPermission } = useAuth();
-  const canEdit = hasPermission(PERMISSIONS.ROLE_UPDATE);
+    const { hasPermission } = useAuth();
+    const canEdit = hasPermission(PERMISSIONS.ROLE_UPDATE);
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [formData, setFormData] = useState({ name: ''});
+
+    const fieldInputStyle = {
+        width: '100%',
+        padding: '8px 12px',
+        border: '1px solid #e2e8f0',
+        borderRadius: '6px',
+        fontSize: '14px',
+    };
+
+    const onFormDataChange = (data: typeof formData) => setFormData(data);
+    const onClose = () => setIsOpen(false);
+    const onSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        
+        await createRole(formData);
+        loadData();
+        setSubmitting(false);
+        onClose();
+    };
 
     const loadData = async () => {
         try {
@@ -173,7 +201,7 @@ export default function RoleBasePermission() {
         <AdminLayout
             headerAction={
                 <div className="flex gap-[20px]">
-                    <Button variant="secondary" icon={<Plus size={16} />}>
+                    <Button variant="secondary" icon={<Plus size={16} />} onClick={()=>setIsOpen(true)}>
                         new role
                     </Button>
                     {canEdit && (
@@ -293,6 +321,33 @@ export default function RoleBasePermission() {
                     </div>
                 </div>
             )}
+
+            <Modal
+                isOpen={isOpen}
+                onClose={onClose}
+                title="Create New Role"
+            >
+                <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <FormField label="Role Name">
+                        <input
+                            type="text"
+                            required
+                            value={formData.name}
+                            onChange={(e) => onFormDataChange({ ...formData, name: e.target.value })}
+                            style={fieldInputStyle}
+                        />
+                    </FormField>
+
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
+                        <Button variant="secondary" onClick={onClose}>
+                            Cancel
+                        </Button>
+                        <Button variant="primary" type="submit" disabled={submitting}>
+                            {submitting ? "Creating..." : "Create"}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </AdminLayout>
     );
 }
