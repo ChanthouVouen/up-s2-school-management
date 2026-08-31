@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import Modal from "~/components/ui/Modal";
 import FormField from "~/components/ui/FormField";
-import { createRole } from "~/services/rolePermission";
+import { createRole } from "../../../services/rolePermission";
 
 const MODULE_META: Record<string, { label: string; icon: ComponentType<{ className?: string }> }> = {
     dashboard: { label: 'Dashboard', icon: LayoutGrid },
