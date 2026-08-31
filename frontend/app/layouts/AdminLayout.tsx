@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import PageHeader from "../components/layout/PageHeader";
 import { useAuth } from "../auth/AuthContext";
-import { findNavItemByPath, getNavCategoriesForRole, getPageDescription } from "./adminNav";
+import { findNavItemByPath, getNavCategoriesForPermissions, getPageDescription } from "./adminNav";
 
 export interface AdminLayoutProps {
   children: ReactNode;
@@ -21,12 +21,12 @@ export default function AdminLayout({
 }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
-  const { logout, role, user } = useAuth();
+  const { logout, permissions, user } = useAuth();
   const location = useLocation();
 
   const currentNavItem = findNavItemByPath(location.pathname);
   const title = currentNavItem?.label ?? "Page";
-  const navCategories = getNavCategoriesForRole(role ?? undefined);
+  const navCategories = getNavCategoriesForPermissions(permissions);
 
   const handleLogout = async () => {
     await logout();

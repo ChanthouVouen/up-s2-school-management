@@ -6,7 +6,8 @@ export interface NavItem {
   icon: React.ReactNode;
   label: string;
   path: string;
-  adminOnly?: boolean;
+  /** Requires the user to hold this permission. Omit to allow any authenticated user. */
+  permission?: string;
 }
 
 export interface NavCategory {

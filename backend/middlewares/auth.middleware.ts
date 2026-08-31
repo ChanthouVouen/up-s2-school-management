@@ -26,7 +26,7 @@ export const authenticate: RequestHandler = asyncHandler(async (req, res, next) 
     return;
   }
 
-  req.user = { id: payload.sub, role: payload.role };
+  req.user = { id: payload.sub, role: payload.role, permissions: payload.permissions ?? [] };
   req.token = token;
   req.tokenExpiresAt = new Date(payload.exp * 1000);
   next();
@@ -35,6 +35,17 @@ export const authenticate: RequestHandler = asyncHandler(async (req, res, next) 
 export function requireRole(...roles: RoleName[]): RequestHandler {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
+      res.status(403).json({ message: 'Insufficient permissions' });
+      return;
+    }
+    next();
+  };
+}
+
+/** Grants access if the user holds at least one of the given permissions. */
+export function requirePermission(...permissions: string[]): RequestHandler {
+  return (req, res, next) => {
+    if (!req.user || !permissions.some((permission) => req.user!.permissions.includes(permission))) {
       res.status(403).json({ message: 'Insufficient permissions' });
       return;
     }

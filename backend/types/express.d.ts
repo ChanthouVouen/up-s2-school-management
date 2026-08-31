@@ -6,6 +6,7 @@ declare global {
       user?: {
         id: string;
         role: RoleName;
+        permissions: string[];
       };
       token?: string;
       tokenExpiresAt?: Date;

@@ -5,9 +5,11 @@ import type { AuthUser } from "../types/auth.types";
 interface AuthContextValue {
   user: AuthUser | null;
   role: AuthUser["role"] | null;
+  permissions: string[];
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  hasPermission: (...permissions: string[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -32,9 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       role: user?.role ?? null,
+      permissions: user?.permissions ?? [],
       isAuthenticated: !!user,
       login,
       logout,
+      hasPermission: (...permissions) => permissions.some((p) => user?.permissions?.includes(p)),
     }),
     [user]
   );

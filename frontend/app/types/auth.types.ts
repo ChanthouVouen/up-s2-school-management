@@ -5,6 +5,7 @@ export interface AuthUser {
   name: string;
   email: string;
   role: RoleName;
+  permissions: string[];
 }
 
 export interface LoginResponse {

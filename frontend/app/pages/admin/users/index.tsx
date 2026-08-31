@@ -5,6 +5,8 @@ import Button from "~/components/ui/Button";
 import Toast from "~/components/ui/Toast";
 import { useToast } from "~/hooks/useToast";
 import { useDebouncedValue } from "~/hooks/useDebouncedValue";
+import { useAuth } from "~/auth/AuthContext";
+import { PERMISSIONS } from "~/types/permissions";
 import {
   fetchUsers,
   createUser,
@@ -45,6 +47,10 @@ export default function UserManagement() {
   const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
 
   const { toast, showToast } = useToast();
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission(PERMISSIONS.USER_CREATE);
+  const canEdit = hasPermission(PERMISSIONS.USER_UPDATE);
+  const canDelete = hasPermission(PERMISSIONS.USER_DELETE);
 
   const loadUsers = async () => {
     try {
@@ -145,14 +151,18 @@ export default function UserManagement() {
   const columns = getUserTableColumns({
     onEdit: handleOpenEdit,
     onDelete: promptDelete,
+    canEdit,
+    canDelete,
   });
 
   return (
     <AdminLayout
       headerAction={
-        <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenAdd} disabled={roles.length === 0}>
-          Add User
-        </Button>
+        canCreate ? (
+          <Button variant="primary" icon={<Plus size={16} />} onClick={handleOpenAdd} disabled={roles.length === 0}>
+            Add User
+          </Button>
+        ) : undefined
       }
     >
       {toast && <Toast type={toast.type} message={toast.message} />}

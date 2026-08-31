@@ -28,7 +28,7 @@ export const register = asyncHandler(async (req, res) => {
   const staffRole = await getOrCreateRole('STAFF');
   const user = await prisma.user.create({
     data: { name, email, password: hashedPassword, roleId: staffRole.id },
-    include: { role: true },
+    include: { role: { include: { permissions: true } } },
   });
 
   res.status(201).json({ user: sanitizeUser(user) });
@@ -44,7 +44,10 @@ export const login = asyncHandler(async (req, res) => {
   }
   const { email, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { email }, include: { role: true } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { role: { include: { permissions: true } } },
+  });
   const passwordMatches = user ? await bcrypt.compare(password, user.password) : false;
 
   if (!user || !passwordMatches) {
@@ -52,7 +55,11 @@ export const login = asyncHandler(async (req, res) => {
     return;
   }
 
-  const token = signAuthToken({ sub: user.id, role: user.role.name as RoleName });
+  const token = signAuthToken({
+    sub: user.id,
+    role: user.role.name as RoleName,
+    permissions: user.role.permissions.map((permission) => permission.name),
+  });
 
   res.status(200).json({ token, user: sanitizeUser(user) });
 });
@@ -70,7 +77,10 @@ export const logout = asyncHandler(async (req, res) => {
 
 //get current user
 export const me = asyncHandler(async (req, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.user!.id }, include: { role: true } });
+  const user = await prisma.user.findUnique({
+    where: { id: req.user!.id },
+    include: { role: { include: { permissions: true } } },
+  });
   if (!user) {
     res.status(404).json({ message: 'User not found' });
     return;

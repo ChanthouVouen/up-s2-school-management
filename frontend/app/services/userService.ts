@@ -1,8 +1,14 @@
 import api from "./api";
 
+export interface PermissionRecord {
+  id: string;
+  name: string;
+}
+
 export interface Role {
   id: string;
   name: string;
+  permissions?: PermissionRecord[];
 }
 
 export interface AppUser {
@@ -67,5 +73,15 @@ export const deleteUser = async (id: string): Promise<{ message: string; id: str
 
 export const fetchRoles = async (): Promise<Role[]> => {
   const response = await api.get("/roles");
+  return response.data;
+};
+
+export const fetchPermissions = async (): Promise<PermissionRecord[]> => {
+  const response = await api.get("/permissions");
+  return response.data;
+};
+
+export const updateRolePermissions = async (roleId: string, permissionIds: string[]): Promise<Role> => {
+  const response = await api.put(`/roles/${roleId}/permissions`, { permissionIds });
   return response.data;
 };
