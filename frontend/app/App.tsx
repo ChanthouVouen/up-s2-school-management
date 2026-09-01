@@ -17,6 +17,7 @@ import PartnerSchoolDetailPage from "./pages/admin/partner-schools/detail";
 import { PERMISSIONS } from "./types/permissions";
 import SystemActivityLogs from "./pages/admin/activity-log";
 import OrganizationSettings from "./pages/admin/setting";
+import ApplicationsPage, { ApplicationDetailPage } from "./pages/admin/applications";
 
 
 const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
@@ -26,7 +27,8 @@ const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/role-permission": RoleBasePermission,
   "/partner-schools": PartnerSchoolsPage,
   "/activity-logs": SystemActivityLogs,
-  "/setting": OrganizationSettings
+  "/setting": OrganizationSettings,
+  "/applications": ApplicationsPage,
 };
 
 const allAdminPaths = NAV_CATEGORIES.flatMap((category) => category.items.map((item) => item.path));
@@ -65,6 +67,10 @@ export function App() {
       {/* Partner school detail page route */}
       <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.PARTNER_SCHOOL_VIEW]} />}>
         <Route path="/partner-schools/:id" element={<PartnerSchoolDetailPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.APPLICATION_VIEW]} />}>
+        <Route path="/applications/:id" element={<ApplicationDetailPage />} />
       </Route>
 
       {/* Permission-gated routes, one ProtectedRoute per required permission */}
