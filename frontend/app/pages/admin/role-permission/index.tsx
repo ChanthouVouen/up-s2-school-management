@@ -22,6 +22,7 @@ import {
     UserCog,
     ShieldCheck,
     LayoutGrid,
+    History,
     Check,
     Minus,
     Save,
@@ -39,6 +40,7 @@ const MODULE_META: Record<string, { label: string; icon: ComponentType<{ classNa
     payment: { label: 'Payments', icon: CreditCard },
     user: { label: 'User Management', icon: UserCog },
     role: { label: 'Roles & Permissions', icon: ShieldCheck },
+    activity: { label: 'Activity Logs', icon: History },
 };
 
 const ACTION_LABELS: Record<string, string> = {

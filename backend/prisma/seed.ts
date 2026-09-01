@@ -27,6 +27,9 @@ const PERMISSIONS_BY_ROLE = {
     'application:view',
     'application:approve',
     'application:reject',
+    'activity:view',
+    'settings:view',
+    'settings:update',
   ],
   STAFF: [
     'student:view',
@@ -40,6 +43,7 @@ const PERMISSIONS_BY_ROLE = {
     'document:create',
     'document:update',
     'application:view',
+    'activity:view',
   ],
 } as const;
 

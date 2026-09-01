@@ -24,6 +24,9 @@ export const PERMISSIONS = {
   APPLICATION_VIEW: 'application:view',
   APPLICATION_APPROVE: 'application:approve',
   APPLICATION_REJECT: 'application:reject',
+  ACTIVITY_VIEW: 'activity:view',
+  SETTINGS_VIEW: 'settings:view',
+  SETTINGS_UPDATE: 'settings:update',
 } as const;
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

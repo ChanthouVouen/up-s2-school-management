@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `activity_logs` MODIFY `type` ENUM('STUDENT', 'TEACHER', 'DOCUMENT', 'APPLICATION', 'PAYMENT', 'USER', 'ROLE', 'SYSTEM') NULL;

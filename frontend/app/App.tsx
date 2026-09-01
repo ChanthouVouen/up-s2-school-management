@@ -12,6 +12,8 @@ import ComingSoonPage from "./pages/admin/ComingSoonPage";
 import { NAV_CATEGORIES, PATH_PERMISSIONS } from "./layouts/adminNav";
 import Dashboard from './pages/admin/AdminDashboard';
 import RoleBasePermission from "./pages/admin/role-permission";
+import SystemActivityLogs from "./pages/admin/activity-log";
+import OrganizationSettings from "./pages/admin/setting";
 
 
 const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
@@ -19,6 +21,8 @@ const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/students": StudentsPage,
   "/users": UserManagementPage,
   "/role-permission": RoleBasePermission,
+  "/activity-logs": SystemActivityLogs,
+  "/setting": OrganizationSettings
 };
 
 const allAdminPaths = NAV_CATEGORIES.flatMap((category) => category.items.map((item) => item.path));
