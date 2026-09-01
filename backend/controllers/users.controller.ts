@@ -76,6 +76,14 @@ export const createUser: RequestHandler = asyncHandler(async (req, res) => {
     include: { role: { include: { permissions: true } } },
   });
 
+  await prisma.activityLog.create({
+    data: {
+      title: 'New User Created',
+      description: `User ${user.name} (${user.email}) was created with role ${user.role.name}.`,
+      type: 'USER',
+    },
+  });
+
   res.status(201).json(sanitizeUser(user));
 });
 
@@ -104,13 +112,21 @@ export const updateUser: RequestHandler = asyncHandler(async (req, res) => {
     }
   }
 
+  let newRole = null;
   if (roleId) {
-    const role = await prisma.role.findUnique({ where: { id: roleId } });
-    if (!role) {
+    newRole = await prisma.role.findUnique({ where: { id: roleId } });
+    if (!newRole) {
       res.status(400).json({ message: 'Invalid role selected' });
       return;
     }
   }
+
+  // Detect modified fields for the activity log
+  const changes: string[] = [];
+  if (name && name !== existingUser.name) changes.push(`Name changed from "${existingUser.name}" to "${name}"`);
+  if (email && email !== existingUser.email) changes.push(`Email changed from "${existingUser.email}" to "${email}"`);
+  if (roleId && roleId !== existingUser.roleId) changes.push(`Role changed to "${newRole!.name}"`);
+  if (password) changes.push('Password reset');
 
   const updated = await prisma.user.update({
     where: { id },
@@ -122,6 +138,16 @@ export const updateUser: RequestHandler = asyncHandler(async (req, res) => {
     },
     include: { role: { include: { permissions: true } } },
   });
+
+  if (changes.length > 0) {
+    await prisma.activityLog.create({
+      data: {
+        title: 'User Updated',
+        description: `Updated account for ${updated.name} (${updated.email}): ${changes.join('; ')}.`,
+        type: 'USER',
+      },
+    });
+  }
 
   res.status(200).json(sanitizeUser(updated));
 });
@@ -150,6 +176,14 @@ export const deleteUser: RequestHandler = asyncHandler(async (req, res) => {
   }
 
   await prisma.user.delete({ where: { id } });
+
+  await prisma.activityLog.create({
+    data: {
+      title: 'User Removed',
+      description: `Deleted user account ${user.name} (${user.email}).`,
+      type: 'USER',
+    },
+  });
 
   res.status(200).json({ message: 'User deleted successfully', id });
 });

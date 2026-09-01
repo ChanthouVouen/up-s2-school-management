@@ -41,6 +41,14 @@ export const updateRolePermissions: RequestHandler = asyncHandler(async (req, re
     include: { permissions: { orderBy: { name: 'asc' } } },
   });
 
+  await prisma.activityLog.create({
+    data: {
+      title: 'Role Permissions Updated',
+      description: `Updated permissions for role ${updated.name} (${updated.permissions.length} permission${updated.permissions.length === 1 ? '' : 's'} assigned).`,
+      type: 'ROLE',
+    },
+  });
+
   res.status(200).json(updated);
 });
 
@@ -63,6 +71,14 @@ export const createRole: RequestHandler = asyncHandler(async (req, res) => {
 
   const roleCreate = await prisma.role.create({
     data: { name },
+  });
+
+  await prisma.activityLog.create({
+    data: {
+      title: 'New Role Created',
+      description: `Role "${roleCreate.name}" was created.`,
+      type: 'ROLE',
+    },
   });
 
   res.status(201).json(roleCreate);

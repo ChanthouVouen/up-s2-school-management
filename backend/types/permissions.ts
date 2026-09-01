@@ -28,6 +28,9 @@ export const PERMISSIONS = {
   PARTNER_SCHOOL_CREATE: 'partner_school:create',
   PARTNER_SCHOOL_UPDATE: 'partner_school:update',
   PARTNER_SCHOOL_DELETE: 'partner_school:delete',
+  ACTIVITY_VIEW: 'activity:view',
+  SETTINGS_VIEW: 'settings:view',
+  SETTINGS_UPDATE: 'settings:update',
 } as const;
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

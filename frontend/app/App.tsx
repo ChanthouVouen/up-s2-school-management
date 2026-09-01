@@ -15,6 +15,9 @@ import RoleBasePermission from "./pages/admin/role-permission";
 import PartnerSchoolsPage from "./pages/admin/partner-schools";
 import PartnerSchoolDetailPage from "./pages/admin/partner-schools/detail";
 import { PERMISSIONS } from "./types/permissions";
+import SystemActivityLogs from "./pages/admin/activity-log";
+import OrganizationSettings from "./pages/admin/setting";
+
 
 const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/": Dashboard,
@@ -22,6 +25,8 @@ const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/users": UserManagementPage,
   "/role-permission": RoleBasePermission,
   "/partner-schools": PartnerSchoolsPage,
+  "/activity-logs": SystemActivityLogs,
+  "/setting": OrganizationSettings
 };
 
 const allAdminPaths = NAV_CATEGORIES.flatMap((category) => category.items.map((item) => item.path));

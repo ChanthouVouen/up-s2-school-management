@@ -31,6 +31,9 @@ const PERMISSIONS_BY_ROLE = {
     'partner_school:create',
     'partner_school:update',
     'partner_school:delete',
+    'activity:view',
+    'settings:view',
+    'settings:update',
   ],
   STAFF: [
     'student:view',
@@ -47,6 +50,7 @@ const PERMISSIONS_BY_ROLE = {
     'partner_school:view',
     'partner_school:create',
     'partner_school:update',
+    'activity:view',
   ],
 } as const;
 

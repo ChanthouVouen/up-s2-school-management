@@ -55,8 +55,8 @@ export const NAV_CATEGORIES: NavCategory[] = [
     title: "System & Reports",
     items: [
       { icon: <BarChart3 size={18} />, label: "Reports", path: "/reports" },
-      { icon: <History size={18} />, label: "Activity Logs", path: "/activity-logs" },
-      { icon: <Settings size={18} />, label: "Settings", path: "/settings" },
+      { icon: <History size={18} />, label: "Activity Logs", path: "/activity-logs", permission: PERMISSIONS.ACTIVITY_VIEW },
+      { icon: <Settings size={18} />, label: "Settings", path: "/setting", permission: PERMISSIONS.SETTINGS_VIEW },
     ],
   },
 ];

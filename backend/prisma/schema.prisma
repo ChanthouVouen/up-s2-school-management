@@ -46,6 +46,8 @@ enum ActivityType {
   DOCUMENT
   APPLICATION
   PAYMENT
+  USER
+  ROLE
   SYSTEM
   PARTNER_SCHOOL
 }
@@ -226,4 +228,23 @@ model Mou {
   updatedAt           DateTime     @updatedAt
 
   @@map("mous")
+}
+
+model OrganizationSetting {
+  id            Int      @id @default(1)
+  orgName       String   @default("")
+  slogan        String?
+  logoUrl       String?  @db.LongText
+  primaryEmail  String?
+  supportPhone  String?
+  websiteUrl    String?
+  supportPortal String?
+  streetAddress String?
+  city          String?
+  state         String?
+  postalCode    String?
+  country       String?
+  updatedAt     DateTime @updatedAt
+
+  @@map("organization_settings")
 }
