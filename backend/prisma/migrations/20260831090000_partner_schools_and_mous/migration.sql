@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `mous` (
 ALTER TABLE `mous` ADD CONSTRAINT `mous_partnerSchoolId_fkey` FOREIGN KEY (`partnerSchoolId`) REFERENCES `partner_schools`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AlterTable
-ALTER TABLE `students` ADD COLUMN IF NOT EXISTS `partnerSchoolId` INTEGER NULL;
+ALTER TABLE `students` ADD COLUMN `partnerSchoolId` INTEGER NULL;
 
 -- AddForeignKey
 ALTER TABLE `students` ADD CONSTRAINT `students_partnerSchoolId_fkey` FOREIGN KEY (`partnerSchoolId`) REFERENCES `partner_schools`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
