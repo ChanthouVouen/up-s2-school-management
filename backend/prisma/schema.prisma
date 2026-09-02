@@ -50,10 +50,10 @@ enum ActivityType {
 }
 
 model Role {
-  id    String @id @default(uuid())
-  name  String @unique
-  users User[]
-  permissions Permission[] @relation("RolePermissions") 
+  id          String       @id @default(uuid())
+  name        String       @unique
+  users       User[]
+  permissions Permission[] @relation("RolePermissions")
 
   @@map("roles")
 }
@@ -135,15 +135,49 @@ model Application {
 }
 
 model Document {
-  id        Int            @id @default(autoincrement())
-  title     String
-  type      DocumentType   @default(OTHER)
-  status    DocumentStatus @default(PENDING)
-  studentId Int?
-  student   Student?       @relation(fields: [studentId], references: [id])
-  createdAt DateTime       @default(now())
+  id     Int            @id @default(autoincrement())
+  title  String
+  type   DocumentType   @default(OTHER)
+  status DocumentStatus @default(PENDING)
 
+  fileName String
+  fileUrl  String
+  fileType String
+  fileSize Int?
+
+  description String? @db.Text
+
+  studentId Int?
+  student   Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  reviewedBy    String?
+  reviewComment String?   @db.Text
+  reviewedAt    DateTime?
+
+  uploadedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews DocumentReview[]
+
+  @@index([status])
+  @@index([type])
+  @@index([studentId])
   @@map("documents")
+}
+
+model DocumentReview {
+  id         Int            @id @default(autoincrement())
+  documentId Int
+  reviewerId String
+  status     DocumentStatus
+  comment    String?        @db.Text
+  uploadedAt  DateTime       @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([reviewerId])
+  @@map("document_reviews")
 }
 
 model ActivityLog {
