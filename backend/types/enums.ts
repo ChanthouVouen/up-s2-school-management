@@ -37,5 +37,7 @@ export enum ActivityType {
   DOCUMENT = 'DOCUMENT',
   APPLICATION = 'APPLICATION',
   PAYMENT = 'PAYMENT',
+  USER = 'USER',
+  ROLE = 'ROLE',
   SYSTEM = 'SYSTEM',
 }

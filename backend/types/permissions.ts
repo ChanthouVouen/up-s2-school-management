@@ -24,6 +24,13 @@ export const PERMISSIONS = {
   APPLICATION_VIEW: 'application:view',
   APPLICATION_APPROVE: 'application:approve',
   APPLICATION_REJECT: 'application:reject',
+  PARTNER_SCHOOL_VIEW: 'partner_school:view',
+  PARTNER_SCHOOL_CREATE: 'partner_school:create',
+  PARTNER_SCHOOL_UPDATE: 'partner_school:update',
+  PARTNER_SCHOOL_DELETE: 'partner_school:delete',
+  ACTIVITY_VIEW: 'activity:view',
+  SETTINGS_VIEW: 'settings:view',
+  SETTINGS_UPDATE: 'settings:update',
 } as const;
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

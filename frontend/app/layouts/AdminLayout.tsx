@@ -8,16 +8,20 @@ import { findNavItemByPath, getNavCategoriesForPermissions, getPageDescription }
 
 export interface AdminLayoutProps {
   children: ReactNode;
+  title?: string;
   pageDescription?: string;
   notificationCount?: number;
   headerAction?: ReactNode;
+  hidePageHeader?: boolean;
 }
 
 export default function AdminLayout({
   children,
+  title: customTitle,
   pageDescription,
   notificationCount = 0,
   headerAction,
+  hidePageHeader = false,
 }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
@@ -25,7 +29,7 @@ export default function AdminLayout({
   const location = useLocation();
 
   const currentNavItem = findNavItemByPath(location.pathname);
-  const title = currentNavItem?.label ?? "Page";
+  const pageTitle = customTitle ?? currentNavItem?.label ?? "Page";
   const navCategories = getNavCategoriesForPermissions(permissions);
 
   const handleLogout = async () => {
@@ -55,11 +59,13 @@ export default function AdminLayout({
         />
 
         <main className="custom-scrollbar" style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-          <PageHeader
-            title={title}
-            description={pageDescription ?? getPageDescription(title)}
-            action={headerAction}
-          />
+          {!hidePageHeader && (
+            <PageHeader
+              title={pageTitle}
+              description={pageDescription ?? getPageDescription(pageTitle)}
+              action={headerAction}
+            />
+          )}
           {children}
         </main>
       </div>

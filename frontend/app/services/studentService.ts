@@ -34,6 +34,8 @@ export interface Student {
   status: StudentStatus | string;
   paymentStatus: PaymentStatus | string;
   department?: string | null;
+  partnerSchoolId?: number | null;
+  partnerSchool?: any;
   createdAt: string;
   updatedAt: string;
   applications?: any[];
@@ -76,6 +78,7 @@ export interface StudentCreateParams {
   status?: string;
   paymentStatus?: string;
   department?: string;
+  partnerSchoolId?: number | null;
 }
 
 export interface StudentUpdateParams {
@@ -88,6 +91,7 @@ export interface StudentUpdateParams {
   status?: string;
   paymentStatus?: string;
   department?: string;
+  partnerSchoolId?: number | null;
 }
 
 export const fetchStudents = async (params?: StudentQueryParams): Promise<StudentListResponse> => {

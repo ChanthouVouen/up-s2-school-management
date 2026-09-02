@@ -463,6 +463,34 @@ export default function StudentDetailView({ studentId, onBack, onEdit }: Student
                   {student.department || "General"}
                 </div>
               </div>
+
+              <div style={{ padding: 16, background: "#eff6ff", borderRadius: 10, border: "1px solid #bfdbfe", gridColumn: "span 2" }}>
+                <div style={{ fontSize: 11, color: "#1e40af", fontWeight: 700, textTransform: "uppercase" }}>Affiliated Partner & Scholarship MOU Details</div>
+                {student.partnerSchool ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", display: "flex", alignItems: "center", gap: 6 }}>
+                      <Building size={18} style={{ color: "#2563eb" }} />
+                      <span>{student.partnerSchool.name}</span>
+                    </div>
+
+                    {student.partnerSchool.mous && student.partnerSchool.mous.length > 0 ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, marginTop: 2 }}>
+                        <span style={{ fontWeight: 700, color: "#4f46e5", display: "flex", alignItems: "center", gap: 4 }}>
+                          🎁 MOU Scholarship: {student.partnerSchool.mous[0].discountValue}
+                          {student.partnerSchool.mous[0].discountType === "PERCENTAGE" ? "% Tuition Discount" : "$ Fixed Off"}
+                        </span>
+                        <span style={{ color: "#64748b" }}>({student.partnerSchool.mous[0].mouTitle})</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: "#64748b" }}>Affiliated institution with standard rates.</div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
+                    Standard Non-Affiliated Student (No partner scholarship applied).
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

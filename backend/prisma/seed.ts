@@ -27,6 +27,13 @@ const PERMISSIONS_BY_ROLE = {
     'application:view',
     'application:approve',
     'application:reject',
+    'partner_school:view',
+    'partner_school:create',
+    'partner_school:update',
+    'partner_school:delete',
+    'activity:view',
+    'settings:view',
+    'settings:update',
   ],
   STAFF: [
     'student:view',
@@ -40,6 +47,10 @@ const PERMISSIONS_BY_ROLE = {
     'document:create',
     'document:update',
     'application:view',
+    'partner_school:view',
+    'partner_school:create',
+    'partner_school:update',
+    'activity:view',
   ],
 } as const;
 
@@ -58,7 +69,7 @@ async function createPermissionsForRoles() {
     )
   );
 
-  const permissionMap = new Map(permissionRecords.map((permission:any) => [permission.name, permission]));
+  const permissionMap = new Map(permissionRecords.map((permission: any) => [permission.name, permission]));
 
   for (const roleName of ROLE_NAMES) {
     const role = await getOrCreateRole(roleName);
@@ -74,7 +85,7 @@ async function createPermissionsForRoles() {
       where: { id: role.id },
       data: {
         permissions: {
-          set: permissionsForRole.map((permission:any) => ({ id: permission.id })),
+          set: permissionsForRole.map((permission: any) => ({ id: permission.id })),
         },
       },
     });
