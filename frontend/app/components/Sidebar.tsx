@@ -134,7 +134,7 @@ export default function Sidebar({
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    end={item.path === "/"}
+                    end={item.path === "/admin"}
                     style={({ isActive }) => ({
                       display: "flex",
                       alignItems: "center",

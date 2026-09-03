@@ -1,9 +1,12 @@
 import express from 'express';
 import { authenticate, requirePermission } from '../middlewares/auth.middleware';
-import { getSettings, updateSettings } from '../controllers/settings.controller';
+import { getPublicSettings, getSettings, updateSettings } from '../controllers/settings.controller';
 import { PERMISSIONS } from '../types/permissions';
 
 const router = express.Router();
+
+// Guest-safe subset for the public welcome page — must be registered before the auth guard below.
+router.get('/public', getPublicSettings);
 
 router.use(authenticate);
 

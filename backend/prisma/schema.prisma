@@ -89,6 +89,18 @@ enum DiscountType {
   FIXED_AMOUNT
 }
 
+enum PaymentTxnStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum InquiryStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
 model Role {
   id          String       @id @default(uuid())
   name        String       @unique
@@ -114,6 +126,7 @@ model User {
   roleId    String
   role      Role     @relation(fields: [roleId], references: [id])
   applications Application[] @relation("ApplicationResponsibleStaff")
+  student   Student?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -144,10 +157,14 @@ model Student {
   department      String?
   partnerSchoolId Int?
   partnerSchool   PartnerSchool?   @relation(fields: [partnerSchoolId], references: [id])
+  userId          String?          @unique
+  user            User?            @relation(fields: [userId], references: [id])
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   applications    Application[]
   documents       Document[]
+  payments        Payment[]
+  inquiries       Inquiry[]
   histories       StudentHistory[]
   idCard          IdCard?
 
@@ -248,6 +265,36 @@ model DocumentReview {
   @@index([documentId])
   @@index([reviewerId])
   @@map("document_reviews")
+}
+
+model Payment {
+  id          Int              @id @default(autoincrement())
+  reference   String           @unique
+  studentId   Int
+  student     Student          @relation(fields: [studentId], references: [id])
+  amount      Float
+  method      String           @default("CARD")
+  status      PaymentTxnStatus @default(COMPLETED)
+  description String?
+  createdAt   DateTime         @default(now())
+
+  @@map("payments")
+}
+
+model Inquiry {
+  id        Int           @id @default(autoincrement())
+  studentId Int?
+  student   Student?      @relation(fields: [studentId], references: [id])
+  name      String
+  email     String
+  subject   String
+  message   String        @db.Text
+  status    InquiryStatus @default(OPEN)
+  response  String?       @db.Text
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("inquiries")
 }
 
 model ActivityLog {

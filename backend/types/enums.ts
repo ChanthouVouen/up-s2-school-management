@@ -41,6 +41,18 @@ export enum DocumentType {
   OTHER = 'OTHER',
 }
 
+export enum PaymentTxnStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
+export enum InquiryStatus {
+  OPEN = 'OPEN',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RESOLVED = 'RESOLVED',
+}
+
 export enum ActivityType {
   STUDENT = 'STUDENT',
   TEACHER = 'TEACHER',

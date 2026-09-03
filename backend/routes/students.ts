@@ -7,14 +7,16 @@ import {
   updateStudentStatus,
   deleteStudent,
   getStudentHistory,
+  getMyProfile,
 } from '../controllers/students.controller';
-import { authenticate, requirePermission } from '../middlewares/auth.middleware';
+import { authenticate, requirePermission, requireRole } from '../middlewares/auth.middleware';
 import { PERMISSIONS } from '../types/permissions';
 
 const router = Router();
 
 router.use(authenticate);
 
+router.get('/me', requireRole('STUDENT'), getMyProfile);
 router.get('/', requirePermission(PERMISSIONS.STUDENT_VIEW), getStudents);
 router.post('/', requirePermission(PERMISSIONS.STUDENT_CREATE), createStudent);
 router.get('/:id', requirePermission(PERMISSIONS.STUDENT_VIEW), getStudentById);

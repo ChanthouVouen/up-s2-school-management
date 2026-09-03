@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { FormField, FormHeader, PasswordField, PrimaryButton, SocialButton, SocialDivider } from '../common/form';
 import { GoogleIcon } from '../register/icons';
 import { useAuth } from '../AuthContext';
+import { getStoredUser } from '../../services/authService';
 
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password. Please try again.';
 
@@ -25,7 +26,8 @@ export default function LoginContainer() {
         try {
             const success = await login(email, password);
             if (success) {
-                navigate('/');
+                const loggedInUser = getStoredUser();
+                navigate(loggedInUser?.role === 'STUDENT' ? '/student' : '/admin');
             } else {
                 setError(INVALID_CREDENTIALS_MESSAGE);
             }

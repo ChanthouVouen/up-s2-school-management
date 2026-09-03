@@ -12,6 +12,7 @@ import {
   BarChart3,
   History,
   Settings,
+  MessageSquare,
 } from "lucide-react";
 import type { NavCategory } from "../components/Sidebar";
 import { PERMISSIONS } from "../types/permissions";
@@ -25,7 +26,7 @@ import { PERMISSIONS } from "../types/permissions";
  */
 export const NAV_CATEGORIES: NavCategory[] = [
   {
-    items: [{ icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/", permission: PERMISSIONS.DASHBOARD_VIEW }],
+    items: [{ icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/admin", permission: PERMISSIONS.DASHBOARD_VIEW }],
   },
   {
     title: "Academics & Admission",
@@ -41,6 +42,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { icon: <Banknote size={18} />, label: "Scholarships", path: "/scholarships" },
       { icon: <CreditCard size={18} />, label: "Payments", path: "/payments", permission: PERMISSIONS.PAYMENT_VIEW },
+      { icon: <MessageSquare size={18} />, label: "Inquiries", path: "/inquiries", permission: PERMISSIONS.INQUIRY_VIEW },
     ],
   },
   {
@@ -68,6 +70,7 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   "Partner Schools": "Manage affiliated partner schools and educational institutions.",
   Scholarships: "Track scholarship programs, eligibility, and awarded students.",
   Payments: "View tuition fee payments, invoices, and financial transactions.",
+  Inquiries: "Respond to information requests from students and prospective applicants.",
   "ID Cards": "Generate, issue, and manage student and staff ID cards.",
   "User Management": "Manage user accounts.",
   "Roles & Permissions": "Configure user roles, system permissions, and security access controls.",

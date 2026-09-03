@@ -20,6 +20,9 @@ import documentRouter from './routes/document';
 import applicationsRouter from './routes/applications';
 import idCardsRouter from './routes/idCards';
 import uploadRouter from './routes/upload';
+import documentsRouter from './routes/documents';
+import paymentsRouter from './routes/payments';
+import inquiriesRouter from './routes/inquiries';
 
 import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
@@ -50,6 +53,10 @@ app.use('/activity-logs', activityLogsRouter);
 app.use('/api/activity-logs', activityLogsRouter);
 app.use('/settings', settingsRouter);
 app.use('/api/settings', settingsRouter);
+// Student-only "/documents/mine" routes must be mounted before the admin
+// document router below, or its "/:id" routes would shadow "/mine".
+app.use('/documents', documentsRouter);
+app.use('/api/documents', documentsRouter);
 app.use('/documents', documentRouter);
 app.use('/api/documents', documentRouter);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -59,6 +66,10 @@ app.use('/upload', uploadRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/id-cards', idCardsRouter);
 app.use('/api/id-cards', idCardsRouter);
+app.use('/payments', paymentsRouter);
+app.use('/api/payments', paymentsRouter);
+app.use('/inquiries', inquiriesRouter);
+app.use('/api/inquiries', inquiriesRouter);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
