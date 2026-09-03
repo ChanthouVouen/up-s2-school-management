@@ -34,6 +34,7 @@ export interface Student {
   status: StudentStatus | string;
   paymentStatus: PaymentStatus | string;
   department?: string | null;
+  photoUrl?: string | null;
   partnerSchoolId?: number | null;
   partnerSchool?: any;
   createdAt: string;
@@ -78,6 +79,7 @@ export interface StudentCreateParams {
   status?: string;
   paymentStatus?: string;
   department?: string;
+  photoUrl?: string;
   partnerSchoolId?: number | null;
 }
 
@@ -91,6 +93,7 @@ export interface StudentUpdateParams {
   status?: string;
   paymentStatus?: string;
   department?: string;
+  photoUrl?: string;
   partnerSchoolId?: number | null;
 }
 

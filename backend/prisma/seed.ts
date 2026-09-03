@@ -34,6 +34,9 @@ const PERMISSIONS_BY_ROLE = {
     'activity:view',
     'settings:view',
     'settings:update',
+    'id_card:view',
+    'id_card:generate',
+    'id_card:revoke',
   ],
   STAFF: [
     'student:view',
@@ -51,6 +54,8 @@ const PERMISSIONS_BY_ROLE = {
     'partner_school:create',
     'partner_school:update',
     'activity:view',
+    'id_card:view',
+    'id_card:generate',
   ],
 } as const;
 
@@ -104,16 +109,16 @@ async function main() {
   const email = 'admin@school.com';
   const password = 'password';
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    console.log(`Admin account already exists: ${email}`);
-    return;
-  }
-
   const adminRole = await getOrCreateRole('ADMIN');
   const hashedPassword = await bcrypt.hash(password, 10);
-  await prisma.user.create({
-    data: {
+
+  await prisma.user.upsert({
+    where: { email },
+    update: {
+      password: hashedPassword,
+      roleId: adminRole.id,
+    },
+    create: {
       name: 'Admin',
       email,
       password: hashedPassword,
@@ -121,7 +126,7 @@ async function main() {
     },
   });
 
-  console.log(`Admin account created: ${email} / ${password}`);
+  console.log(`Admin account ready: ${email} / ${password}`);
 }
 
 main()

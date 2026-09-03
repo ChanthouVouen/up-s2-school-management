@@ -50,6 +50,7 @@ enum ActivityType {
   ROLE
   SYSTEM
   PARTNER_SCHOOL
+  ID_CARD
 }
 
 enum PartnerType {
@@ -126,6 +127,7 @@ model Student {
   gender          String?
   dob             DateTime?
   address         String?
+  photoUrl        String?
   status          StudentStatus    @default(ENROLLED)
   paymentStatus   PaymentStatus    @default(UNPAID)
   department      String?
@@ -136,8 +138,24 @@ model Student {
   applications    Application[]
   documents       Document[]
   histories       StudentHistory[]
+  idCard          IdCard?
 
   @@map("students")
+}
+
+model IdCard {
+  id                Int      @id @default(autoincrement())
+  cardNumber        String   @unique
+  studentId         Int      @unique
+  student           Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  issueDate         DateTime @default(now())
+  expiryDate        DateTime
+  verificationToken String   @unique @default(uuid())
+  status            String   @default("ACTIVE")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("id_cards")
 }
 
 model StudentHistory {

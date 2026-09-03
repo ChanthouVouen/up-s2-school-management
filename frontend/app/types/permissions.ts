@@ -29,6 +29,9 @@ export const PERMISSIONS = {
   ACTIVITY_VIEW: "activity:view",
   SETTINGS_VIEW: "settings:view",
   SETTINGS_UPDATE: "settings:update",
+  ID_CARD_VIEW: "id_card:view",
+  ID_CARD_GENERATE: "id_card:generate",
+  ID_CARD_REVOKE: "id_card:revoke",
 } as const;
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

@@ -17,7 +17,8 @@ import PartnerSchoolDetailPage from "./pages/admin/partner-schools/detail";
 import { PERMISSIONS } from "./types/permissions";
 import SystemActivityLogs from "./pages/admin/activity-log";
 import OrganizationSettings from "./pages/admin/setting";
-
+import IdCardsPage from "./pages/admin/id-cards";
+import { VerifyCardPage } from "./pages/admin/id-cards/VerifyCardPage";
 
 const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/": Dashboard,
@@ -26,7 +27,8 @@ const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/role-permission": RoleBasePermission,
   "/partner-schools": PartnerSchoolsPage,
   "/activity-logs": SystemActivityLogs,
-  "/setting": OrganizationSettings
+  "/setting": OrganizationSettings,
+  "/id-cards": IdCardsPage,
 };
 
 const allAdminPaths = NAV_CATEGORIES.flatMap((category) => category.items.map((item) => item.path));
@@ -56,6 +58,9 @@ export function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+
+      {/* Public QR Code Verification Route */}
+      <Route path="/verify-card" element={<VerifyCardPage />} />
 
       {/* Any authenticated user — no specific permission required */}
       <Route element={<ProtectedRoute />}>
