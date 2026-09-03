@@ -22,6 +22,7 @@ import {
     UserCog,
     ShieldCheck,
     LayoutGrid,
+    History,
     Check,
     Minus,
     Save,
@@ -39,6 +40,7 @@ const MODULE_META: Record<string, { label: string; icon: ComponentType<{ classNa
     payment: { label: 'Payments', icon: CreditCard },
     user: { label: 'User Management', icon: UserCog },
     role: { label: 'Roles & Permissions', icon: ShieldCheck },
+    activity: { label: 'Activity Logs', icon: History },
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -81,7 +83,7 @@ export default function RoleBasePermission() {
     const [isOpen, setIsOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [formData, setFormData] = useState({ name: ''});
+    const [formData, setFormData] = useState({ name: '' });
 
     const fieldInputStyle = {
         width: '100%',
@@ -96,7 +98,7 @@ export default function RoleBasePermission() {
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
-        
+
         await createRole(formData);
         loadData();
         setSubmitting(false);
@@ -201,7 +203,7 @@ export default function RoleBasePermission() {
         <AdminLayout
             headerAction={
                 <div className="flex gap-[20px]">
-                    <Button variant="secondary" icon={<Plus size={16} />} onClick={()=>setIsOpen(true)}>
+                    <Button variant="secondary" icon={<Plus size={16} />} onClick={() => setIsOpen(true)}>
                         new role
                     </Button>
                     {canEdit && (

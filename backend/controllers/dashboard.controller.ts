@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
+import { ApplicationStatus } from '../types/enums';
 
 export const getDashboardStats: RequestHandler = asyncHandler(async (_req, res) => {
   // Auto-heal any invalid zero dates ('0000-00-00 00:00:00') inserted manually into MySQL
@@ -57,7 +58,7 @@ export const getDashboardStats: RequestHandler = asyncHandler(async (_req, res) 
     prisma.student.count(),
     prisma.student.count({ where: { createdAt: { gte: startOfToday } } }),
     prisma.document.count({ where: { status: 'PENDING' } }),
-    prisma.application.count({ where: { status: 'PENDING' } }),
+    prisma.application.count({ where: { status: ApplicationStatus.PENDING } }),
     prisma.student.count({ where: { status: 'ENROLLED' } }),
     prisma.student.count({ where: { paymentStatus: 'PAID' } }),
     prisma.student.count({ where: { paymentStatus: 'UNPAID' } }),

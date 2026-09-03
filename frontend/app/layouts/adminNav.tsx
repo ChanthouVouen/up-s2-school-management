@@ -33,7 +33,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
       { icon: <Users size={18} />, label: "Students", path: "/students", permission: PERMISSIONS.STUDENT_VIEW },
       { icon: <ClipboardList size={18} />, label: "Applications", path: "/applications", permission: PERMISSIONS.APPLICATION_VIEW },
       { icon: <FileText size={18} />, label: "Documents", path: "/documents", permission: PERMISSIONS.DOCUMENT_VIEW },
-      { icon: <GraduationCap size={18} />, label: "Partner Schools", path: "/partner-schools" },
+      { icon: <GraduationCap size={18} />, label: "Partner Schools", path: "/partner-schools", permission: PERMISSIONS.PARTNER_SCHOOL_VIEW },
     ],
   },
   {
@@ -41,7 +41,6 @@ export const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { icon: <Banknote size={18} />, label: "Scholarships", path: "/scholarships" },
       { icon: <CreditCard size={18} />, label: "Payments", path: "/payments", permission: PERMISSIONS.PAYMENT_VIEW },
-      { icon: <IdCard size={18} />, label: "ID Cards", path: "/id-cards" },
     ],
   },
   {
@@ -55,8 +54,8 @@ export const NAV_CATEGORIES: NavCategory[] = [
     title: "System & Reports",
     items: [
       { icon: <BarChart3 size={18} />, label: "Reports", path: "/reports" },
-      { icon: <History size={18} />, label: "Activity Logs", path: "/activity-logs" },
-      { icon: <Settings size={18} />, label: "Settings", path: "/settings" },
+      { icon: <History size={18} />, label: "Activity Logs", path: "/activity-logs", permission: PERMISSIONS.ACTIVITY_VIEW },
+      { icon: <Settings size={18} />, label: "Settings", path: "/setting", permission: PERMISSIONS.SETTINGS_VIEW },
     ],
   },
 ];

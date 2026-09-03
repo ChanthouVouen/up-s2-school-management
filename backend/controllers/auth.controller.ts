@@ -15,7 +15,9 @@ export const register = asyncHandler(async (req, res) => {
     res.status(400).json({ message: 'Validation failed', errors: parsed.error.flatten().fieldErrors });
     return;
   }
-  const { name, email, password } = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
+  const password = parsed.data.password.trim();
+  const name = parsed.data.name.trim();
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -42,7 +44,8 @@ export const login = asyncHandler(async (req, res) => {
     res.status(400).json({ message: 'Validation failed', errors: parsed.error.flatten().fieldErrors });
     return;
   }
-  const { email, password } = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
+  const password = parsed.data.password.trim();
 
   const user = await prisma.user.findUnique({
     where: { email },
@@ -51,6 +54,7 @@ export const login = asyncHandler(async (req, res) => {
   const passwordMatches = user ? await bcrypt.compare(password, user.password) : false;
 
   if (!user || !passwordMatches) {
+    console.warn(`Login failed for email: "${email}"`);
     res.status(401).json({ message: 'Invalid email or password' });
     return;
   }

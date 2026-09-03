@@ -12,13 +12,31 @@ import ComingSoonPage from "./pages/admin/ComingSoonPage";
 import { NAV_CATEGORIES, PATH_PERMISSIONS } from "./layouts/adminNav";
 import Dashboard from './pages/admin/AdminDashboard';
 import RoleBasePermission from "./pages/admin/role-permission";
+import DocumentList from "./pages/admin/documents/DocumentList";
+import UploadDocument from "./pages/admin/documents/UploadDocument";
+import DocumentDetail from "./pages/admin/documents/DocumentDetail";
+import DocumentPreview from "./pages/admin/documents/DocumentPreview";
+import ReviewDocument from "./pages/admin/documents/ReviewDocument";
+import PartnerSchoolsPage from "./pages/admin/partner-schools";
+import PartnerSchoolDetailPage from "./pages/admin/partner-schools/detail";
+import { PERMISSIONS } from "./types/permissions";
+import SystemActivityLogs from "./pages/admin/activity-log";
+import OrganizationSettings from "./pages/admin/setting";
+import ApplicationsPage, { ApplicationDetailPage } from "./pages/admin/applications";
 
+import IdCardsPage from "./pages/admin/id-cards";
+import { VerifyCardPage } from "./pages/admin/id-cards/VerifyCardPage";
 
 const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/": Dashboard,
   "/students": StudentsPage,
   "/users": UserManagementPage,
   "/role-permission": RoleBasePermission,
+  "/documents": DocumentList,
+  "/partner-schools": PartnerSchoolsPage,
+  "/activity-logs": SystemActivityLogs,
+  "/setting": OrganizationSettings,
+  "/applications": ApplicationsPage,
 };
 
 const allAdminPaths = NAV_CATEGORIES.flatMap((category) => category.items.map((item) => item.path));
@@ -49,14 +67,36 @@ export function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
+      {/* Public QR Code Verification Route */}
+      <Route path="/verify-card" element={<VerifyCardPage />} />
+
       {/* Any authenticated user — no specific permission required */}
       <Route element={<ProtectedRoute />}>
         {openPaths.map(renderAdminRoute)}
+        <Route path="/documents/upload" element={<UploadDocument />} />
+
+        <Route path="/documents/:id" element={<DocumentDetail />} />
+
+        <Route path="/documents/:id/preview" element={<DocumentPreview />} />
+
+        <Route path="/documents/:id/review" element={<ReviewDocument />} />
+      </Route>
+
+      {/* Partner school detail page route */}
+      <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.PARTNER_SCHOOL_VIEW]} />}>
+        <Route path="/partner-schools/:id" element={<PartnerSchoolDetailPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.APPLICATION_VIEW]} />}>
+        <Route path="/applications/:id" element={<ApplicationDetailPage />} />
       </Route>
 
       {/* Permission-gated routes, one ProtectedRoute per required permission */}
       {Array.from(pathsByPermission.entries()).map(([permission, paths]) => (
-        <Route key={permission} element={<ProtectedRoute requiredPermissions={[permission]} />}>
+        <Route
+          key={permission}
+          element={<ProtectedRoute requiredPermissions={[permission]} />}
+        >
           {paths.map(renderAdminRoute)}
         </Route>
       ))}

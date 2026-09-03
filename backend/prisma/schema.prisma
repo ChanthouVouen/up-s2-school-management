@@ -21,6 +21,16 @@ enum PaymentStatus {
 }
 
 enum ApplicationStatus {
+  REGISTRATION
+  DOCUMENT_SUBMISSION
+  DOCUMENT_REVIEW
+  DOCUMENTS_APPROVED
+  SCHOLARSHIP_APPLICATION
+  APPLICATION_SUBMITTED
+  SCHOOL_REVIEW
+  SCHOOL_APPROVED
+  PAYMENT
+  ENROLLED
   PENDING
   APPROVED
   REJECTED
@@ -46,14 +56,44 @@ enum ActivityType {
   DOCUMENT
   APPLICATION
   PAYMENT
+  USER
+  ROLE
   SYSTEM
+  PARTNER_SCHOOL
+  ID_CARD
+}
+
+enum PartnerType {
+  HIGH_SCHOOL
+  UNIVERSITY
+  COMPANY
+  ORGANIZATION
+}
+
+enum PartnerSchoolStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_RENEWAL
+  EXPIRED
+}
+
+enum MouStatus {
+  ACTIVE
+  EXPIRED
+  PENDING_RENEWAL
+  TERMINATED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
 }
 
 model Role {
-  id    String @id @default(uuid())
-  name  String @unique
-  users User[]
-  permissions Permission[] @relation("RolePermissions") 
+  id          String       @id @default(uuid())
+  name        String       @unique
+  users       User[]
+  permissions Permission[] @relation("RolePermissions")
 
   @@map("roles")
 }
@@ -73,6 +113,7 @@ model User {
   name      String
   roleId    String
   role      Role     @relation(fields: [roleId], references: [id])
+  applications Application[] @relation("ApplicationResponsibleStaff")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -89,24 +130,43 @@ model BlacklistedToken {
 }
 
 model Student {
-  id            Int              @id @default(autoincrement())
-  studentCode   String           @unique
-  name          String
-  email         String?
-  phone         String?
-  gender        String?
-  dob           DateTime?
-  address       String?
-  status        StudentStatus    @default(ENROLLED)
-  paymentStatus PaymentStatus    @default(UNPAID)
-  department    String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  applications  Application[]
-  documents     Document[]
-  histories     StudentHistory[]
+  id              Int              @id @default(autoincrement())
+  studentCode     String           @unique
+  name            String
+  email           String?
+  phone           String?
+  gender          String?
+  dob             DateTime?
+  address         String?
+  photoUrl        String?
+  status          StudentStatus    @default(ENROLLED)
+  paymentStatus   PaymentStatus    @default(UNPAID)
+  department      String?
+  partnerSchoolId Int?
+  partnerSchool   PartnerSchool?   @relation(fields: [partnerSchoolId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  applications    Application[]
+  documents       Document[]
+  histories       StudentHistory[]
+  idCard          IdCard?
 
   @@map("students")
+}
+
+model IdCard {
+  id                Int      @id @default(autoincrement())
+  cardNumber        String   @unique
+  studentId         Int      @unique
+  student           Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  issueDate         DateTime @default(now())
+  expiryDate        DateTime
+  verificationToken String   @unique @default(uuid())
+  status            String   @default("ACTIVE")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("id_cards")
 }
 
 model StudentHistory {
@@ -122,28 +182,72 @@ model StudentHistory {
 }
 
 model Application {
-  id            Int               @id @default(autoincrement())
-  applicantName String
-  email         String
-  program       String
-  status        ApplicationStatus @default(PENDING)
-  studentId     Int?
-  student       Student?          @relation(fields: [studentId], references: [id])
-  createdAt     DateTime          @default(now())
+  id                  Int               @id @default(autoincrement())
+  applicantName       String
+  email               String
+  program             String
+  applicationDate     DateTime          @default(now())
+  status              ApplicationStatus @default(REGISTRATION)
+  studentId           Int?
+  student             Student?          @relation(fields: [studentId], references: [id])
+  partnerSchoolId     Int?
+  partnerSchool       PartnerSchool?    @relation(fields: [partnerSchoolId], references: [id])
+  responsibleStaffId  String?
+  responsibleStaff    User?             @relation("ApplicationResponsibleStaff", fields: [responsibleStaffId], references: [id], onDelete: SetNull)
+  scholarshipRequested Boolean           @default(false)
+  scholarshipDetails  String?           @db.Text
+  notes               String?           @db.Text
+  approvalResult      String?           @db.Text
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
   @@map("applications")
 }
 
 model Document {
-  id        Int            @id @default(autoincrement())
-  title     String
-  type      DocumentType   @default(OTHER)
-  status    DocumentStatus @default(PENDING)
-  studentId Int?
-  student   Student?       @relation(fields: [studentId], references: [id])
-  createdAt DateTime       @default(now())
+  id     Int            @id @default(autoincrement())
+  title  String
+  type   DocumentType   @default(OTHER)
+  status DocumentStatus @default(PENDING)
 
+  fileName String
+  fileUrl  String
+  fileType String
+  fileSize Int?
+
+  description String? @db.Text
+
+  studentId Int?
+  student   Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  reviewedBy    String?
+  reviewComment String?   @db.Text
+  reviewedAt    DateTime?
+
+  uploadedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews DocumentReview[]
+
+  @@index([status])
+  @@index([type])
+  @@index([studentId])
   @@map("documents")
+}
+
+model DocumentReview {
+  id         Int            @id @default(autoincrement())
+  documentId Int
+  reviewerId String
+  status     DocumentStatus
+  comment    String?        @db.Text
+  uploadedAt  DateTime       @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([reviewerId])
+  @@map("document_reviews")
 }
 
 model ActivityLog {
@@ -154,4 +258,67 @@ model ActivityLog {
   createdAt   DateTime      @default(now())
 
   @@map("activity_logs")
+}
+
+model PartnerSchool {
+  id            Int                 @id @default(autoincrement())
+  name          String
+  type          PartnerType         @default(HIGH_SCHOOL)
+  city          String?
+  address       String?
+  website       String?
+  logoUrl       String?
+  contactPerson String?
+  contactEmail  String?
+  contactPhone  String?
+  status        PartnerSchoolStatus @default(ACTIVE)
+  notes         String?             @db.Text
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  students      Student[]
+  mous          Mou[]
+  applications  Application[]
+
+  @@map("partner_schools")
+}
+
+model Mou {
+  id                  Int          @id @default(autoincrement())
+  partnerSchoolId     Int
+  partnerSchool       PartnerSchool @relation(fields: [partnerSchoolId], references: [id], onDelete: Cascade)
+  mouTitle            String
+  mouNumber           String?
+  signDate            DateTime
+  startDate           DateTime
+  endDate             DateTime
+  status              MouStatus    @default(ACTIVE)
+  discountType        DiscountType @default(PERCENTAGE)
+  discountValue       Float        @default(0)
+  maxEligibleStudents Int?
+  mouDocumentUrl      String?
+  scope               String?      @db.Text
+  notes               String?      @db.Text
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@map("mous")
+}
+
+model OrganizationSetting {
+  id            Int      @id @default(1)
+  orgName       String   @default("")
+  slogan        String?
+  logoUrl       String?  @db.LongText
+  primaryEmail  String?
+  supportPhone  String?
+  websiteUrl    String?
+  supportPortal String?
+  streetAddress String?
+  city          String?
+  state         String?
+  postalCode    String?
+  country       String?
+  updatedAt     DateTime @updatedAt
+
+  @@map("organization_settings")
 }

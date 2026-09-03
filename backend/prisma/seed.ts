@@ -27,6 +27,16 @@ const PERMISSIONS_BY_ROLE = {
     'application:view',
     'application:approve',
     'application:reject',
+    'partner_school:view',
+    'partner_school:create',
+    'partner_school:update',
+    'partner_school:delete',
+    'activity:view',
+    'settings:view',
+    'settings:update',
+    'id_card:view',
+    'id_card:generate',
+    'id_card:revoke',
   ],
   STAFF: [
     'student:view',
@@ -40,6 +50,12 @@ const PERMISSIONS_BY_ROLE = {
     'document:create',
     'document:update',
     'application:view',
+    'partner_school:view',
+    'partner_school:create',
+    'partner_school:update',
+    'activity:view',
+    'id_card:view',
+    'id_card:generate',
   ],
 } as const;
 
@@ -58,7 +74,7 @@ async function createPermissionsForRoles() {
     )
   );
 
-  const permissionMap = new Map(permissionRecords.map((permission:any) => [permission.name, permission]));
+  const permissionMap = new Map(permissionRecords.map((permission: any) => [permission.name, permission]));
 
   for (const roleName of ROLE_NAMES) {
     const role = await getOrCreateRole(roleName);
@@ -74,7 +90,7 @@ async function createPermissionsForRoles() {
       where: { id: role.id },
       data: {
         permissions: {
-          set: permissionsForRole.map((permission:any) => ({ id: permission.id })),
+          set: permissionsForRole.map((permission: any) => ({ id: permission.id })),
         },
       },
     });
@@ -93,16 +109,16 @@ async function main() {
   const email = 'admin@school.com';
   const password = 'password';
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    console.log(`Admin account already exists: ${email}`);
-    return;
-  }
-
   const adminRole = await getOrCreateRole('ADMIN');
   const hashedPassword = await bcrypt.hash(password, 10);
-  await prisma.user.create({
-    data: {
+
+  await prisma.user.upsert({
+    where: { email },
+    update: {
+      password: hashedPassword,
+      roleId: adminRole.id,
+    },
+    create: {
       name: 'Admin',
       email,
       password: hashedPassword,
@@ -110,7 +126,7 @@ async function main() {
     },
   });
 
-  console.log(`Admin account created: ${email} / ${password}`);
+  console.log(`Admin account ready: ${email} / ${password}`);
 }
 
 main()
