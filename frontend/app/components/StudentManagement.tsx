@@ -38,6 +38,10 @@ import {
   CheckCircle2,
   GraduationCap,
   Gift,
+  Upload,
+  Camera,
+  X,
+  ImageIcon,
 } from "lucide-react";
 
 const EMPTY_FORM = {
@@ -49,6 +53,7 @@ const EMPTY_FORM = {
   dob: "",
   address: "",
   department: "Computer Science",
+  photoUrl: "",
   status: StudentStatus.ENROLLED,
   paymentStatus: PaymentStatus.UNPAID,
   partnerSchoolId: "",
@@ -80,6 +85,23 @@ function getPaymentBadgeStyle(paymentStatus: string) {
     default:
       return { bg: "#f1f5f9", color: "#475569" };
   }
+}
+
+import api, { formatImageUrl } from "../services/api";
+
+function handlePhotoUpload(file: File, onDone: (photoUrl: string) => void) {
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const base64 = (event.target?.result as string) || "";
+    api.post("/upload/image", { image: base64 })
+      .then((res) => {
+        onDone(res.data?.url || base64);
+      })
+      .catch(() => {
+        onDone(base64);
+      });
+  };
+  reader.readAsDataURL(file);
 }
 
 export default function StudentManagement() {
@@ -173,6 +195,7 @@ export default function StudentManagement() {
     dob: student.dob ? new Date(student.dob).toISOString().split("T")[0] : "",
     address: student.address || "",
     department: student.department || "Computer Science",
+    photoUrl: student.photoUrl || "",
     status: (student.status as StudentStatus) || StudentStatus.ENROLLED,
     paymentStatus: (student.paymentStatus as PaymentStatus) || PaymentStatus.UNPAID,
     partnerSchoolId: student.partnerSchoolId ? String(student.partnerSchoolId) : "",
@@ -197,6 +220,7 @@ export default function StudentManagement() {
         dob: addFormData.dob || undefined,
         address: addFormData.address || undefined,
         department: addFormData.department,
+        photoUrl: addFormData.photoUrl,
         status: addFormData.status,
         paymentStatus: addFormData.paymentStatus,
         partnerSchoolId: addFormData.partnerSchoolId ? Number(addFormData.partnerSchoolId) : null,
@@ -225,6 +249,7 @@ export default function StudentManagement() {
         dob: editFormData.dob || undefined,
         address: editFormData.address || undefined,
         department: editFormData.department,
+        photoUrl: editFormData.photoUrl,
         status: editFormData.status,
         paymentStatus: editFormData.paymentStatus,
         partnerSchoolId: editFormData.partnerSchoolId ? Number(editFormData.partnerSchoolId) : null,
@@ -302,10 +327,12 @@ export default function StudentManagement() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div
               style={{
+                position: "relative",
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
                 background: "#e2e8f0",
+                overflow: "hidden",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -315,7 +342,17 @@ export default function StudentManagement() {
                 flexShrink: 0,
               }}
             >
-              {displayName.charAt(0).toUpperCase()}
+              <span>{displayName.charAt(0).toUpperCase()}</span>
+              {stu?.photoUrl && (
+                <img
+                  src={formatImageUrl(stu.photoUrl)}
+                  alt={displayName}
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              )}
             </div>
             <div>
               <div style={{ fontWeight: 600, color: "#1e293b" }}>{displayName}</div>
@@ -614,15 +651,88 @@ export default function StudentManagement() {
       {/* ADD STUDENT MODAL */}
       <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Register New Student" width={560}>
         <form onSubmit={handleAddSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <FormField label="Student Code (Leave blank to auto-generate)">
-            <input
-              type="text"
-              placeholder="e.g. STU-2026-005"
-              value={addFormData.studentCode}
-              onChange={(e) => setAddFormData({ ...addFormData, studentCode: e.target.value })}
-              style={fieldInputStyle}
-            />
-          </FormField>
+          {/* PROFILE PHOTO UPLOADER (TOP OF FORM) */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "14px", background: "#f8fafc", borderRadius: 12, border: "1px dashed #cbd5e1", marginBottom: 2 }}>
+            <div
+              style={{
+                width: 76,
+                height: 76,
+                borderRadius: 18,
+                background: "#ffffff",
+                border: "2px solid #e2e8f0",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#94a3b8",
+                fontSize: 28,
+                fontWeight: 800,
+                marginBottom: 8,
+              }}
+            >
+              {addFormData.photoUrl ? (
+                <img src={formatImageUrl(addFormData.photoUrl)} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <Camera size={30} color="#94a3b8" />
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+              <label
+                style={{
+                  padding: "6px 14px",
+                  background: "#2563eb",
+                  color: "#ffffff",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  boxShadow: "0 2px 5px rgba(37,99,235,0.2)",
+                }}
+              >
+                <Upload size={14} /> {addFormData.photoUrl ? "Change Photo" : "Upload Photo (Optional)"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handlePhotoUpload(file, (url) => {
+                        setAddFormData((prev) => ({ ...prev, photoUrl: url }));
+                      });
+                    }
+                  }}
+                />
+              </label>
+
+              {addFormData.photoUrl && (
+                <button
+                  type="button"
+                  onClick={() => setAddFormData({ ...addFormData, photoUrl: "" })}
+                  style={{
+                    padding: "6px 12px",
+                    background: "#fee2e2",
+                    color: "#dc2626",
+                    border: "none",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Remove Photo
+                </button>
+              )}
+            </div>
+            <span style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
+              JPG, PNG, or WEBP photo from your computer (Optional)
+            </span>
+          </div>
 
           <FormField label="Full Name *">
             <input
@@ -741,6 +851,89 @@ export default function StudentManagement() {
       {/* EDIT STUDENT MODAL */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Student Profile" width={560}>
         <form onSubmit={handleEditSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* PROFILE PHOTO UPLOADER (TOP OF EDIT FORM) */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "14px", background: "#f8fafc", borderRadius: 12, border: "1px dashed #cbd5e1", marginBottom: 2 }}>
+            <div
+              style={{
+                width: 76,
+                height: 76,
+                borderRadius: 18,
+                background: "#ffffff",
+                border: "2px solid #e2e8f0",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#94a3b8",
+                fontSize: 28,
+                fontWeight: 800,
+                marginBottom: 8,
+              }}
+            >
+              {editFormData.photoUrl ? (
+                <img src={formatImageUrl(editFormData.photoUrl)} alt="Student Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <Camera size={30} color="#94a3b8" />
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+              <label
+                style={{
+                  padding: "6px 14px",
+                  background: "#2563eb",
+                  color: "#ffffff",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  boxShadow: "0 2px 5px rgba(37,99,235,0.2)",
+                }}
+              >
+                <Upload size={14} /> {editFormData.photoUrl ? "Change Photo" : "Upload Profile Photo"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handlePhotoUpload(file, (url) => {
+                        setEditFormData((prev) => ({ ...prev, photoUrl: url }));
+                      });
+                    }
+                  }}
+                />
+              </label>
+
+              {editFormData.photoUrl && (
+                <button
+                  type="button"
+                  onClick={() => setEditFormData({ ...editFormData, photoUrl: "" })}
+                  style={{
+                    padding: "6px 12px",
+                    background: "#fee2e2",
+                    color: "#dc2626",
+                    border: "none",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Remove Photo
+                </button>
+              )}
+            </div>
+            <span style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
+              Optional • Upload JPG/PNG file or leave blank
+            </span>
+          </div>
+
           <FormField label="Student Code">
             <input type="text" disabled value={editFormData.studentCode} style={{ ...fieldInputStyle, background: "#f1f5f9" }} />
           </FormField>

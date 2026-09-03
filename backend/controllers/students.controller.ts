@@ -104,7 +104,7 @@ export const getStudentById: RequestHandler = asyncHandler(async (req, res) => {
 
 // POST /students - Create new student
 export const createStudent: RequestHandler = asyncHandler(async (req, res) => {
-  const { name, email, phone, gender, dob, address, status, paymentStatus, department, studentCode, partnerSchoolId } = req.body;
+  const { name, email, phone, gender, dob, address, status, paymentStatus, department, studentCode, partnerSchoolId, photoUrl } = req.body;
 
   if (!name || name.trim() === '') {
     res.status(400).json({ message: 'Student name is required' });
@@ -128,6 +128,7 @@ export const createStudent: RequestHandler = asyncHandler(async (req, res) => {
       gender: gender ? gender.trim() : null,
       dob: dob ? new Date(dob) : null,
       address: address ? address.trim() : null,
+      photoUrl: photoUrl ? photoUrl.trim() : null,
       status: status && Object.values(StudentStatus).includes(status) ? status : StudentStatus.ENROLLED,
       paymentStatus: paymentStatus && Object.values(PaymentStatus).includes(paymentStatus) ? paymentStatus : PaymentStatus.UNPAID,
       department: department ? department.trim() : null,
@@ -183,7 +184,7 @@ export const updateStudent: RequestHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const { name, email, phone, gender, dob, address, status, paymentStatus, department, partnerSchoolId } = req.body;
+  const { name, email, phone, gender, dob, address, status, paymentStatus, department, partnerSchoolId, photoUrl } = req.body;
 
   // Detect modified fields for audit trail
   const changes: string[] = [];
@@ -202,6 +203,7 @@ export const updateStudent: RequestHandler = asyncHandler(async (req, res) => {
       gender: gender !== undefined ? (gender ? gender.trim() : null) : existingStudent.gender,
       dob: dob ? new Date(dob) : existingStudent.dob,
       address: address !== undefined ? (address ? address.trim() : null) : existingStudent.address,
+      photoUrl: photoUrl !== undefined ? (photoUrl ? photoUrl.trim() : null) : (existingStudent as any).photoUrl,
       status: status && Object.values(StudentStatus).includes(status) ? status : existingStudent.status,
       paymentStatus: paymentStatus && Object.values(PaymentStatus).includes(paymentStatus) ? paymentStatus : existingStudent.paymentStatus,
       department: department !== undefined ? (department ? department.trim() : null) : existingStudent.department,

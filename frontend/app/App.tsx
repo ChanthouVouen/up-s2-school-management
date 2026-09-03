@@ -19,6 +19,8 @@ import SystemActivityLogs from "./pages/admin/activity-log";
 import OrganizationSettings from "./pages/admin/setting";
 import ApplicationsPage, { ApplicationDetailPage } from "./pages/admin/applications";
 
+import IdCardsPage from "./pages/admin/id-cards";
+import { VerifyCardPage } from "./pages/admin/id-cards/VerifyCardPage";
 
 const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/": Dashboard,
@@ -58,6 +60,9 @@ export function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+
+      {/* Public QR Code Verification Route */}
+      <Route path="/verify-card" element={<VerifyCardPage />} />
 
       {/* Any authenticated user — no specific permission required */}
       <Route element={<ProtectedRoute />}>

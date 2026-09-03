@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import {
   fetchStudentById,
   updateStudentStatus,
@@ -7,6 +8,11 @@ import {
   StudentStatus,
   PaymentStatus,
 } from "../services/studentService";
+import {
+  fetchIdCardByStudentId,
+  generateIdCard,
+} from "../services/idCardService";
+import { formatImageUrl } from "../services/api";
 import {
   ArrowLeft,
   UserCheck,
@@ -26,6 +32,14 @@ import {
   MapPin,
   User,
   ShieldCheck,
+  ExternalLink,
+  PlusCircle,
+  School,
+  Sparkles,
+  Printer,
+  Download,
+  Lock,
+  XCircle,
 } from "lucide-react";
 
 interface StudentDetailViewProps {
@@ -39,7 +53,7 @@ export default function StudentDetailView({ studentId, onBack, onEdit }: Student
   const [histories, setHistories] = useState<StudentHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "card" | "documents" | "history">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "card" | "qr" | "documents">("overview");
 
   const loadDetails = async () => {
     try {
@@ -114,67 +128,41 @@ export default function StudentDetailView({ studentId, onBack, onEdit }: Student
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* HEADER TOP BAR */}
+      {/* HEADER CONTROL BAR */}
       <div
         style={{
-          background: "#fff",
-          borderRadius: 10,
-          padding: "16px 20px",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12,
+          marginBottom: 4,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            onClick={onBack}
-            style={{
-              padding: "8px 12px",
-              background: "#f1f5f9",
-              border: "1px solid #cbd5e1",
-              borderRadius: 8,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 12,
-              fontWeight: 600,
-              color: "#334155",
-            }}
-          >
-            <ArrowLeft size={16} /> Back to Directory
-          </button>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{student.name}</span>
-              <span
-                style={{
-                  padding: "3px 8px",
-                  background: "#eff6ff",
-                  color: "#2563eb",
-                  borderRadius: 6,
-                  fontWeight: 700,
-                  fontSize: 12,
-                }}
-              >
-                {student.studentCode}
-              </span>
-            </div>
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-              {student.department || "General Department"} &bull; Registered {new Date(student.createdAt).toLocaleDateString()}
-            </div>
-          </div>
-        </div>
+        <button
+          onClick={onBack}
+          style={{
+            padding: "7px 14px",
+            background: "#ffffff",
+            border: "1px solid #cbd5e1",
+            borderRadius: 8,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            color: "#334155",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          }}
+        >
+          <ArrowLeft size={15} /> Back to Directory
+        </button>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
             onClick={loadDetails}
             style={{
-              padding: "8px 12px",
-              background: "#f8fafc",
+              padding: "7px 14px",
+              background: "#ffffff",
               border: "1px solid #cbd5e1",
               borderRadius: 8,
               fontSize: 12,
@@ -184,6 +172,7 @@ export default function StudentDetailView({ studentId, onBack, onEdit }: Student
               display: "flex",
               alignItems: "center",
               gap: 6,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             }}
           >
             <RefreshCw size={14} /> Refresh
@@ -192,21 +181,21 @@ export default function StudentDetailView({ studentId, onBack, onEdit }: Student
             <button
               onClick={() => onEdit(student)}
               style={{
-                padding: "8px 16px",
-                background: "#3b82f6",
-                color: "#fff",
+                padding: "7px 16px",
+                background: "#2563eb",
+                color: "#ffffff",
                 border: "none",
                 borderRadius: 8,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                boxShadow: "0 2px 4px rgba(59,130,246,0.25)",
+                boxShadow: "0 2px 5px rgba(37,99,235,0.25)",
               }}
             >
-              <Edit2 size={15} /> Edit Profile
+              <Edit2 size={14} /> Edit Profile
             </button>
           )}
         </div>
@@ -302,23 +291,6 @@ export default function StudentDetailView({ studentId, onBack, onEdit }: Student
             </select>
           </div>
         </div>
-
-        {/* Audit Logs Count */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 10,
-            padding: "16px 18px",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-          }}
-        >
-          <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>System History Records</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{histories.length} Events</div>
-          <div style={{ fontSize: 11, color: "#94a3b8" }}>Recorded in database audit log</div>
-        </div>
       </div>
 
       {/* TABS NAVIGATION */}
@@ -388,25 +360,6 @@ export default function StudentDetailView({ studentId, onBack, onEdit }: Student
           }}
         >
           <FileText size={15} /> Documents & Applications ({student.documents?.length || 0})
-        </button>
-
-        <button
-          onClick={() => setActiveTab("history")}
-          style={{
-            padding: "14px 0",
-            border: "none",
-            background: "none",
-            fontSize: 13,
-            fontWeight: 600,
-            color: activeTab === "history" ? "#2563eb" : "#64748b",
-            borderBottom: activeTab === "history" ? "2px solid #2563eb" : "2px solid transparent",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <History size={15} /> Audit Timeline ({histories.length})
         </button>
       </div>
 
@@ -495,91 +448,413 @@ export default function StudentDetailView({ studentId, onBack, onEdit }: Student
           </div>
         )}
 
-        {/* TAB 2: STUDENT CARD & QR CODE PLACEHOLDER */}
+        {/* TAB 2: STUDENT CARD (Card with small QR inside) */}
         {activeTab === "card" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Student ID Card & QR Code</h4>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-              {/* DIGITAL STUDENT CARD PREVIEW */}
+            {student.status !== "ENROLLED" || student.paymentStatus !== "PAID" ? (
               <div
                 style={{
-                  background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-                  borderRadius: 14,
-                  padding: 24,
-                  color: "#ffffff",
-                  boxShadow: "0 10px 25px -5px rgba(15,23,42,0.4)",
-                  position: "relative",
-                  overflow: "hidden",
+                  background: "#ffffff",
+                  borderRadius: 16,
+                  padding: "36px 24px",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+                  border: "1px solid #cbd5e1",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  textAlign: "center",
+                  gap: 14,
+                  maxWidth: 540,
+                  margin: "10px auto",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "#94a3b8" }}>
-                    UNIVERSITY STUDENT ID
-                  </div>
-                  <ShieldCheck size={22} color="#38bdf8" />
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 20,
+                    background: "#fef3c7",
+                    color: "#d97706",
+                    border: "1px solid #fde68a",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Lock size={32} />
                 </div>
 
-                <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 20 }}>
-                  <div
+                <div>
+                  <h3 style={{ margin: "0 0 6px 0", fontSize: 18, fontWeight: 800, color: "#0f172a" }}>
+                    ID Card Generation Locked
+                  </h3>
+                  <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+                    Official Student ID Cards & QR verification codes are issued exclusively to students who have completed enrollment and tuition payments.
+                  </p>
+                </div>
+
+                {/* Requirements Checklist */}
+                <div
+                  style={{
+                    width: "100%",
+                    background: "#f8fafc",
+                    borderRadius: 12,
+                    padding: "14px 18px",
+                    border: "1px solid #e2e8f0",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    marginTop: 4,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ fontWeight: 600, color: "#475569" }}>1. Enrollment Status (Must be ENROLLED):</span>
+                    {student.status === "ENROLLED" ? (
+                      <span style={{ color: "#16a34a", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                        <CheckCircle2 size={16} /> Enrolled
+                      </span>
+                    ) : (
+                      <span style={{ color: "#dc2626", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                        <XCircle size={16} /> {student.status}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ fontWeight: 600, color: "#475569" }}>2. Tuition Payment Status (Must be PAID):</span>
+                    {student.paymentStatus === "PAID" ? (
+                      <span style={{ color: "#16a34a", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                        <CheckCircle2 size={16} /> Paid
+                      </span>
+                    ) : (
+                      <span style={{ color: "#dc2626", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                        <XCircle size={16} /> {student.paymentStatus}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                  💡 Change status to <strong>ENROLLED</strong> and payment status to <strong>PAID</strong> above to issue card.
+                </div>
+              </div>
+            ) : (
+              <React.Fragment>
+                {/* Print CSS */}
+            <style>{`
+              @media print {
+                @page {
+                  margin: 15mm;
+                  size: auto;
+                }
+                * {
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                  color-adjust: exact !important;
+                }
+                body * {
+                  visibility: hidden;
+                }
+                #student-id-card-printable, #student-id-card-printable * {
+                  visibility: visible;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                #student-id-card-printable {
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  width: 100%;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  padding: 20px;
+                  background: transparent !important;
+                }
+                .printable-card-bg {
+                  background-color: #0f172a !important;
+                  background-image: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%) !important;
+                  border: 2px solid #6366f1 !important;
+                }
+                .printable-card-header {
+                  background-color: #1e1b4b !important;
+                  background-image: linear-gradient(90deg, #1e1b4b 0%, #312e81 100%) !important;
+                }
+                .printable-card-banner {
+                  background-color: #4f46e5 !important;
+                  color: #ffffff !important;
+                }
+                .printable-card-box {
+                  background-color: #0f172a !important;
+                  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                }
+                .printable-card-footer {
+                  background-color: #090d16 !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `}</style>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Official Student ID Card</h4>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  onClick={() => window.print()}
+                  style={{
+                    padding: "7px 16px",
+                    background: "#2563eb",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <Printer size={15} /> Print / Export PDF
+                </button>
+
+                {(student as any).idCard?.verificationToken && (
+                  <a
+                    href={`/verify-card?token=${(student as any).idCard.verificationToken}`}
+                    target="_blank"
+                    rel="noreferrer"
                     style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: "50%",
-                      background: "#38bdf8",
-                      color: "#0f172a",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#2563eb",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 800,
-                      fontSize: 22,
+                      gap: 4,
+                      textDecoration: "none",
                     }}
                   >
-                    {student.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>{student.name}</div>
-                    <div style={{ fontSize: 12, color: "#38bdf8", fontWeight: 600 }}>{student.studentCode}</div>
-                  </div>
-                </div>
+                    Verify Online <ExternalLink size={13} />
+                  </a>
+                )}
+              </div>
+            </div>
 
-                <div style={{ fontSize: 12, color: "#cbd5e1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div>
-                    <span style={{ color: "#94a3b8", display: "block", fontSize: 10 }}>DEPARTMENT</span>
-                    <strong>{student.department || "CS"}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: "#94a3b8", display: "block", fontSize: 10 }}>STATUS</span>
-                    <strong style={{ color: "#4ade80" }}>{student.status}</strong>
-                  </div>
+            <div id="student-id-card-printable" style={{ display: "flex", justifyContent: "center", width: "100%", padding: "10px 0" }}>
+            {/* EXACT VERTICAL STUDENT ID CARD MATCHING SCREENSHOT */}
+            <div
+              className="printable-card-bg"
+              style={{
+                position: "relative",
+                width: "330px",
+                height: "510px",
+                background: "#0f172a",
+                backgroundImage: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)",
+                borderRadius: "20px",
+                border: "2px solid rgba(99, 102, 241, 0.35)",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                userSelect: "none",
+                WebkitPrintColorAdjust: "exact",
+                printColorAdjust: "exact",
+              } as React.CSSProperties}
+            >
+              {/* Top Header */}
+              <div className="printable-card-header" style={{ background: "#1e1b4b", backgroundImage: "linear-gradient(90deg, #1e1b4b 0%, #312e81 100%)", padding: "14px 18px", borderBottom: "1px solid rgba(99, 102, 241, 0.3)", display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(99, 102, 241, 0.25)", border: "1px solid rgba(129, 140, 248, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#a5b4fc" }}>
+                  <School size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "13px", fontWeight: "800", color: "#ffffff", letterSpacing: "0.5px", textTransform: "uppercase", lineHeight: 1.2 }}>
+                    UNIVERSITY POLYTECHNIC
+                  </h3>
+                  <p style={{ margin: "2px 0 0 0", fontSize: "9px", color: "#a5b4fc", fontWeight: "600", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                    EXCELLENCE IN HIGHER EDUCATION
+                  </p>
                 </div>
               </div>
 
-              {/* QR CODE CONTAINER */}
+              {/* Purple Banner */}
+              <div className="printable-card-banner" style={{ background: "#4f46e5", padding: "4px 14px", textTransform: "uppercase", textAlign: "center", fontSize: "10.5px", fontWeight: "800", letterSpacing: "1.2px", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                <Sparkles size={11} style={{ color: "#fde047" }} />
+                STUDENT IDENTIFICATION CARD
+              </div>
+
+              {/* Body Content */}
+              <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", flex: 1, justifyContent: "space-between" }}>
+                {/* Photo */}
+                <div style={{ position: "relative", marginTop: "2px" }}>
+                  <div
+                    onClick={() => onEdit && onEdit(student)}
+                    title={onEdit ? "Click to change profile picture" : undefined}
+                    style={{
+                      width: "104px",
+                      height: "104px",
+                      borderRadius: "18px",
+                      border: "4px solid rgba(99, 102, 241, 0.4)",
+                      boxShadow: "0 10px 25px rgba(0,0,0,0.4)",
+                      background: "#1e293b",
+                      overflow: "hidden",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#94a3b8",
+                      fontSize: "36px",
+                      fontWeight: "800",
+                      cursor: onEdit ? "pointer" : "default",
+                      transition: "transform 0.2s ease",
+                    }}
+                  >
+                    {student.photoUrl ? (
+                      <img src={formatImageUrl(student.photoUrl)} alt={student.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      student.name.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  {/* VERIFIED Badge */}
+                  <div style={{ position: "absolute", bottom: "-8px", left: "50%", transform: "translateX(-50%)", background: "#22c55e", color: "#052e16", fontWeight: "900", fontSize: "9px", padding: "2px 9px", borderRadius: "9999px", letterSpacing: "1px", textTransform: "uppercase", boxShadow: "0 4px 6px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: "3px", whiteSpace: "nowrap" }}>
+                    <CheckCircle2 size={10} />
+                    VERIFIED
+                  </div>
+                </div>
+
+                {/* Identity Info */}
+                <div style={{ width: "100%", marginTop: "12px", marginBottom: "8px" }}>
+                  <h4 style={{ margin: 0, fontSize: "18px", fontWeight: "800", color: "#ffffff", letterSpacing: "-0.3px" }}>
+                    {student.name}
+                  </h4>
+                  <div style={{ display: "inline-block", marginTop: "4px", background: "rgba(99, 102, 241, 0.2)", border: "1px solid rgba(99, 102, 241, 0.4)", padding: "2.5px 11px", borderRadius: "9999px", color: "#c7d2fe", fontSize: "11px", fontFamily: "monospace", fontWeight: "700" }}>
+                    {student.studentCode}
+                  </div>
+                </div>
+
+                {/* Bottom Details + QR Code 2x2 Grid Box */}
+                <div className="printable-card-box" style={{ width: "100%", background: "#0f172a", backgroundColor: "#0f172a", padding: "12px 14px", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.12)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 12px", textAlign: "left", flex: 1 }}>
+                    <div>
+                      <span style={{ fontSize: "8.5px", textTransform: "uppercase", color: "#94a3b8", fontWeight: "700", display: "block" }}>DEPARTMENT</span>
+                      <span style={{ fontSize: "11px", color: "#ffffff", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{student.department || "Computer Science"}</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: "8.5px", textTransform: "uppercase", color: "#94a3b8", fontWeight: "700", display: "block" }}>GENDER</span>
+                      <span style={{ fontSize: "11px", color: "#ffffff", fontWeight: "700", display: "block" }}>{student.gender || "Female"}</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: "8.5px", textTransform: "uppercase", color: "#94a3b8", fontWeight: "700", display: "block" }}>ISSUE DATE</span>
+                      <span style={{ fontSize: "10px", color: "#cbd5e1", fontFamily: "monospace", fontWeight: "600", display: "block" }}>Sep 02, 2026</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: "8.5px", textTransform: "uppercase", color: "#94a3b8", fontWeight: "700", display: "block" }}>EXPIRY DATE</span>
+                      <span style={{ fontSize: "10px", color: "#4ade80", fontFamily: "monospace", fontWeight: "700", display: "block" }}>Sep 02, 2030</span>
+                    </div>
+                  </div>
+
+                  {/* Embedded QR Code */}
+                  {(student as any).idCard?.verificationToken ? (
+                    <div style={{ background: "#ffffff", padding: "5px", borderRadius: "9px", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+                      <QRCodeSVG value={`${window.location.origin}/verify-card?token=${(student as any).idCard.verificationToken}`} size={54} bgColor="#FFFFFF" fgColor="#0F172A" level="L" />
+                    </div>
+                  ) : (
+                    <div style={{ background: "#ffffff", padding: "5px", borderRadius: "9px", flexShrink: 0 }}>
+                      <QRCodeSVG value={`${window.location.origin}/verify-card?token=demo`} size={54} bgColor="#FFFFFF" fgColor="#0F172A" level="L" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer Bar */}
+              <div className="printable-card-footer" style={{ background: "#090d16", backgroundColor: "#090d16", padding: "8px 16px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "9.5px", color: "#94a3b8", fontFamily: "monospace" }}>
+                <span>NO: {(student as any).idCard?.cardNumber || "IDC-2026-" + student.studentCode}</span>
+                <span style={{ color: "#a5b4fc", fontWeight: "700" }}>OFFICIAL CARD</span>
+              </div>
+            </div>
+            </div>
+          </React.Fragment>
+        )}
+          </div>
+        )}
+
+        {/* TAB 3: STANDALONE QR CODE */}
+        {activeTab === "qr" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Student Verification QR Code</h4>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
               <div
                 style={{
-                  border: "2px dashed #cbd5e1",
-                  borderRadius: 14,
-                  padding: 24,
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 16,
+                  padding: 32,
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
                   textAlign: "center",
-                  background: "#f8fafc",
+                  background: "#ffffff",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+                  maxWidth: 400,
+                  width: "100%",
                 }}
               >
-                <QrCode size={64} color="#3b82f6" style={{ marginBottom: 12 }} />
-                <div style={{ fontWeight: 700, color: "#0f172a", fontSize: 14 }}>QR Code Verification</div>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 4, maxWidth: 220 }}>
-                  Scan to verify authentic student identification & campus clearance.
-                </div>
+                {(student as any).idCard?.verificationToken ? (
+                  <>
+                    <div style={{ background: "#ffffff", padding: 16, borderRadius: 16, border: "2px solid #e2e8f0", boxShadow: "0 6px 20px rgba(0,0,0,0.06)", marginBottom: 16 }}>
+                      <QRCodeSVG
+                        value={`${window.location.origin}/verify-card?token=${(student as any).idCard.verificationToken}`}
+                        size={180}
+                        bgColor="#FFFFFF"
+                        fgColor="#0F172A"
+                        level="H"
+                      />
+                    </div>
+                    <div style={{ fontWeight: 800, color: "#0f172a", fontSize: 15 }}>{student.name}</div>
+                    <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 600, marginTop: 2 }}>{student.studentCode}</div>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 6, fontFamily: "monospace" }}>
+                      {(student as any).idCard.verificationToken}
+                    </div>
+                    <a
+                      href={`/verify-card?token=${(student as any).idCard.verificationToken}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        marginTop: 16,
+                        padding: "8px 18px",
+                        background: "#2563eb",
+                        color: "#ffffff",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <QrCode size={14} /> Scan & Verify Online
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <QrCode size={56} color="#94a3b8" style={{ marginBottom: 14 }} />
+                    <div style={{ fontWeight: 700, color: "#0f172a", fontSize: 14 }}>No QR Code Generated</div>
+                    <div style={{ fontSize: 12, color: "#64748b", marginTop: 4, maxWidth: 260 }}>
+                      Generate an official Student ID Card to issue a scannable verification QR code.
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 3: DOCUMENTS */}
+        {/* TAB 4: DOCUMENTS */}
         {activeTab === "documents" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Documents & Admission Files</h4>
@@ -619,40 +894,6 @@ export default function StudentDetailView({ studentId, onBack, onEdit }: Student
                     >
                       {doc.status}
                     </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 4: AUDIT TIMELINE */}
-        {activeTab === "history" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Full Audit Timeline</h4>
-
-            {histories.length === 0 ? (
-              <div style={{ padding: "30px 0", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
-                No historical logs recorded.
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {histories.map((h) => (
-                  <div
-                    key={h.id}
-                    style={{
-                      padding: 14,
-                      borderRadius: 8,
-                      background: "#f8fafc",
-                      borderLeft: "4px solid #3b82f6",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ fontWeight: 700, fontSize: 13, color: "#0f172a" }}>{h.action}</span>
-                      <span style={{ fontSize: 11, color: "#94a3b8" }}>{new Date(h.createdAt).toLocaleString()}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: "#475569" }}>{h.description}</div>
-                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Performed By: {h.performedBy || "Admin"}</div>
                   </div>
                 ))}
               </div>

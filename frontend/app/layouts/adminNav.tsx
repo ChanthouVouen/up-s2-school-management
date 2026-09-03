@@ -41,7 +41,6 @@ export const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { icon: <Banknote size={18} />, label: "Scholarships", path: "/scholarships" },
       { icon: <CreditCard size={18} />, label: "Payments", path: "/payments", permission: PERMISSIONS.PAYMENT_VIEW },
-      { icon: <IdCard size={18} />, label: "ID Cards", path: "/id-cards" },
     ],
   },
   {
