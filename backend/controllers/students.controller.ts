@@ -89,7 +89,7 @@ export const getStudentById: RequestHandler = asyncHandler(async (req, res) => {
         },
       },
       applications: { orderBy: { createdAt: 'desc' } },
-      documents: { orderBy: { createdAt: 'desc' } },
+      documents: { orderBy: { uploadedAt: 'desc' } },
       histories: { orderBy: { createdAt: 'desc' } },
     },
   });

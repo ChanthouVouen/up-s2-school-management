@@ -1,282 +1,253 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import AdminLayout from "../../../layouts/AdminLayout";
+import ConfirmModal from "../../../components/users/ConfirmModal";
+import {
+  deleteDocument,
+  DocumentRecord,
+  DocumentStatus,
+  DocumentType,
+  fetchDocuments,
+  formatFileSize,
+} from "../../../services/documentService";
 
-interface DocumentItem {
-  id: number;
-  name: string;
-  type: string;
-  category: string;
-  uploadedBy: string;
-  uploadedDate: string;
-  status: "Pending" | "Approved" | "Rejected";
-  size: string;
-}
-
-const documents: DocumentItem[] = [
-  {
-    id: 1,
-    name: "Student Transcript 2026.pdf",
-    type: "PDF",
-    category: "Academic",
-    uploadedBy: "Admin",
-    uploadedDate: "31 Aug 2026",
-    status: "Pending",
-    size: "2.4 MB",
-  },
-  {
-    id: 2,
-    name: "Student ID Card.pdf",
-    type: "PDF",
-    category: "Student Records",
-    uploadedBy: "Chanthou",
-    uploadedDate: "30 Aug 2026",
-    status: "Approved",
-    size: "1.2 MB",
-  },
-  {
-    id: 3,
-    name: "Academic Report.xlsx",
-    type: "Excel",
-    category: "Academic",
-    uploadedBy: "Sran",
-    uploadedDate: "29 Aug 2026",
-    status: "Approved",
-    size: "3.8 MB",
-  },
-  {
-    id: 4,
-    name: "Student Agreement.pdf",
-    type: "PDF",
-    category: "Administration",
-    uploadedBy: "K'dit",
-    uploadedDate: "28 Aug 2026",
-    status: "Rejected",
-    size: "980 KB",
-  },
-];
+const statusLabels: Record<DocumentStatus, string> = {
+  PENDING: "Pending",
+  VERIFIED: "Approved",
+  REJECTED: "Rejected",
+};
+const typeLabels: Record<DocumentType, string> = {
+  DIPLOMA: "Diploma",
+  ID: "ID",
+  TRANSCRIPT: "Transcript",
+  CERTIFICATE: "Certificate",
+  OTHER: "Other",
+};
 
 const DocumentList: React.FC = () => {
   const navigate = useNavigate();
-
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [typeFilter, setTypeFilter] = useState("All");
-
-  const filteredDocuments = useMemo(() => {
-    return documents.filter((document) => {
-      const matchesSearch =
-        document.name.toLowerCase().includes(search.toLowerCase()) ||
-        document.category.toLowerCase().includes(search.toLowerCase()) ||
-        document.uploadedBy.toLowerCase().includes(search.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === "All" || document.status === statusFilter;
-
-      const matchesType = typeFilter === "All" || document.type === typeFilter;
-
-      return matchesSearch && matchesStatus && matchesType;
-    });
-  }, [search, statusFilter, typeFilter]);
-
-  const getStatusClass = (status: DocumentItem["status"]) => {
-    switch (status) {
-      case "Approved":
-        return "bg-green-100 text-green-700";
-      case "Rejected":
-        return "bg-red-100 text-red-600";
-      default:
-        return "bg-amber-100 text-amber-700";
+  const [status, setStatus] = useState<"" | DocumentStatus>("");
+  const [type, setType] = useState<"" | DocumentType>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [documentToDelete, setDocumentToDelete] =
+    useState<DocumentRecord | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const loadDocuments = async () => {
+    setLoading(true);
+    try {
+      const response = await fetchDocuments({
+        search: search || undefined,
+        status: status || undefined,
+        type: type || undefined,
+        limit: 100,
+      });
+      setDocuments(response.data);
+      setError("");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Unable to load documents.");
+    } finally {
+      setLoading(false);
     }
   };
-
+  useEffect(() => {
+    void loadDocuments();
+  }, [search, status, type]);
+  const stats = useMemo(
+    () => ({
+      total: documents.length,
+      pending: documents.filter((item) => item.status === "PENDING").length,
+      approved: documents.filter((item) => item.status === "VERIFIED").length,
+      rejected: documents.filter((item) => item.status === "REJECTED").length,
+    }),
+    [documents],
+  );
+  const handleDelete = async () => {
+    if (!documentToDelete) return;
+    setDeleting(true);
+    try {
+      await deleteDocument(documentToDelete.id);
+      setDocuments((items) =>
+        items.filter((item) => item.id !== documentToDelete.id),
+      );
+      setDocumentToDelete(null);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Unable to delete document.");
+    } finally {
+      setDeleting(false);
+    }
+  };
   return (
     <AdminLayout>
       <div className="min-h-screen bg-slate-50 p-6">
-        {/* Page Header */}
-        <div className="mb-6 flex flex-col items-start justify-end gap-4 sm:flex-row sm:items-center">
+        <div className="mb-6 flex justify-end">
           <button
-            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
             onClick={() => navigate("/documents/upload")}
           >
             + Upload Document
           </button>
         </div>
-
-        {/* Stats Grid */}
-        <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-[18px]">
-            <span className="text-sm text-gray-500">Total Documents</span>
-            <strong className="mt-2 block text-2xl font-bold text-gray-900">
-              {documents.length}
-            </strong>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-[18px]">
-            <span className="text-sm text-gray-500">Pending Review</span>
-            <strong className="mt-2 block text-2xl font-bold text-gray-900">
-              {documents.filter((item) => item.status === "Pending").length}
-            </strong>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-[18px]">
-            <span className="text-sm text-gray-500">Approved</span>
-            <strong className="mt-2 block text-2xl font-bold text-gray-900">
-              {documents.filter((item) => item.status === "Approved").length}
-            </strong>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-[18px]">
-            <span className="text-sm text-gray-500">Rejected</span>
-            <strong className="mt-2 block text-2xl font-bold text-gray-900">
-              {documents.filter((item) => item.status === "Rejected").length}
-            </strong>
-          </div>
-        </div>
-
-        {/* Main Document Card */}
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          {/* Filters */}
-          <div className="flex flex-col gap-3 border-b border-gray-200 p-[18px] lg:flex-row">
-            <div className="flex flex-1 items-center gap-2 rounded-lg border border-gray-300 px-3 py-2">
-              <span className="text-gray-400">⌕</span>
-              <input
-                type="text"
-                placeholder="Search documents..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full text-sm text-gray-900 outline-none placeholder:text-gray-400"
-              />
+        {/* <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["Total Documents", stats.total],
+            ["Pending Review", stats.pending],
+            ["Approved", stats.approved],
+            ["Rejected", stats.rejected],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="rounded-xl border border-gray-200 bg-white p-4"
+            >
+              <span className="text-sm text-gray-500">{label}</span>
+              <strong className="mt-2 block text-2xl font-bold text-gray-900">
+                {value}
+              </strong>
             </div>
-
+          ))}
+        </div> */}
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="flex flex-col gap-3 border-b border-gray-200 p-4.5 lg:flex-row">
+            <input
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none"
+              placeholder="Search documents..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as "" | DocumentStatus)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
             >
-              <option value="All">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
+              <option value="">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="VERIFIED">Approved</option>
+              <option value="REJECTED">Rejected</option>
             </select>
-
             <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none"
+              value={type}
+              onChange={(e) => setType(e.target.value as "" | DocumentType)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
             >
-              <option value="All">All Types</option>
-              <option value="PDF">PDF</option>
-              <option value="Excel">Excel</option>
+              <option value="">All Types</option>
+              {Object.entries(typeLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
-
-          {/* Table Container */}
+          {error && (
+            <p className="m-4 rounded bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </p>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3.5 text-xs font-medium text-gray-500">
-                    Document
-                  </th>
-                  <th className="px-4 py-3.5 text-xs font-medium text-gray-500">
-                    Type
-                  </th>
-                  <th className="px-4 py-3.5 text-xs font-medium text-gray-500">
-                    Category
-                  </th>
-                  <th className="px-4 py-3.5 text-xs font-medium text-gray-500">
-                    Uploaded By
-                  </th>
-                  <th className="px-4 py-3.5 text-xs font-medium text-gray-500">
-                    Date
-                  </th>
-                  <th className="px-4 py-3.5 text-xs font-medium text-gray-500">
-                    Status
-                  </th>
-                  <th className="px-4 py-3.5 text-xs font-medium text-gray-500">
-                    Actions
-                  </th>
+                  {[
+                    "Document",
+                    "Type",
+                    "Student",
+                    "Date",
+                    "Status",
+                    "Actions",
+                  ].map((heading) => (
+                    <th
+                      key={heading}
+                      className="px-4 py-3.5 text-xs font-medium text-gray-500"
+                    >
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-
               <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
-                {filteredDocuments.length > 0 ? (
-                  filteredDocuments.map((document) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="p-10 text-center">
+                      Loading documents...
+                    </td>
+                  </tr>
+                ) : documents.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-10 text-center text-gray-400">
+                      No documents found.
+                    </td>
+                  </tr>
+                ) : (
+                  documents.map((document) => (
                     <tr key={document.id} className="hover:bg-gray-50/50">
                       <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50">
-                            📄
-                          </div>
-                          <div>
-                            <strong className="block font-medium text-gray-900">
-                              {document.name}
-                            </strong>
-                            <small className="block text-xs text-gray-400">
-                              {document.size}
-                            </small>
-                          </div>
-                        </div>
+                        <strong className="block font-medium text-gray-900">
+                          {document.title}
+                        </strong>
+                        <small className="text-xs text-gray-400">
+                          {document.fileName} ·{" "}
+                          {formatFileSize(document.fileSize)}
+                        </small>
                       </td>
-
-                      <td className="px-4 py-4">{document.type}</td>
-                      <td className="px-4 py-4">{document.category}</td>
-                      <td className="px-4 py-4">{document.uploadedBy}</td>
-                      <td className="px-4 py-4">{document.uploadedDate}</td>
-
+                      <td className="px-4 py-4">{typeLabels[document.type]}</td>
+                      <td className="px-4 py-4">
+                        {document.student?.name || "-"}
+                      </td>
+                      <td className="px-4 py-4">
+                        {new Date(document.uploadedAt).toLocaleDateString()}
+                      </td>
                       <td className="px-4 py-4">
                         <span
-                          className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusClass(
-                            document.status,
-                          )}`}
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${document.status === "VERIFIED" ? "bg-green-100 text-green-700" : document.status === "REJECTED" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"}`}
                         >
-                          {document.status}
+                          {statusLabels[document.status]}
                         </span>
                       </td>
-
                       <td className="px-4 py-4">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex gap-2">
                           <button
                             title="Preview"
-                            className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                            className="rounded-md border border-gray-200 px-2 py-1 hover:bg-gray-50"
                             onClick={() =>
                               navigate(`/documents/${document.id}/preview`)
                             }
                           >
-                            👁
+                            View
                           </button>
-
                           <button
-                            title="Details"
-                            className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                            onClick={() =>
-                              navigate(`/documents/${document.id}`)
-                            }
+                            title="Delete"
+                            className="rounded-md border border-red-200 px-2 py-1 text-red-600 hover:bg-red-50"
+                            onClick={() => setDocumentToDelete(document)}
                           >
-                            ⋮
+                            Delete
                           </button>
                         </div>
                       </td>
                     </tr>
                   ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="p-10 text-center text-sm text-gray-400"
-                    >
-                      No documents found.
-                    </td>
-                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
+      <ConfirmModal
+        isOpen={documentToDelete !== null}
+        onClose={() => setDocumentToDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Document"
+        message={
+          <>
+            Are you sure you want to delete <strong>"{documentToDelete?.title}"</strong>? This action is permanent and cannot be undone.
+          </>
+        }
+        confirmText="Yes, Delete Document"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleting}
+      />
     </AdminLayout>
   );
 };
-
 export default DocumentList;

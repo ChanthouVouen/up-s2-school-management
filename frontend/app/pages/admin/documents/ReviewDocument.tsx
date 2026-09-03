@@ -1,212 +1,135 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import AdminLayout from "../../../layouts/AdminLayout";
+import {
+  DocumentRecord,
+  fetchDocument,
+  getDocumentUrl,
+  reviewDocument,
+} from "../../../services/documentService";
 
 const ReviewDocument: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-
+  const [document, setDocument] = useState<DocumentRecord | null>(null);
   const [comment, setComment] = useState("");
-  const [showReject, setShowReject] = useState(false);
-
-  const handleApprove = () => {
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (!id) return;
+    fetchDocument(Number(id))
+      .then(setDocument)
+      .catch((err) =>
+        setError(err.response?.data?.message || "Unable to load document."),
+      );
+  }, [id]);
+  const submitReview = async (status: "VERIFIED" | "REJECTED") => {
     if (!comment.trim()) {
-      alert("Please enter a review comment.");
+      setError("A review comment is required.");
       return;
     }
-
-    alert("Document approved successfully!");
-    navigate("/documents");
-  };
-
-  const handleReject = () => {
-    if (!comment.trim()) {
-      alert("Please enter a reason for rejection.");
-      return;
+    setSaving(true);
+    setError("");
+    try {
+      await reviewDocument(Number(id), status, comment.trim());
+      navigate(`/documents/${id}`);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Unable to save review.");
+    } finally {
+      setSaving(false);
     }
-
-    alert("Document rejected.");
-    navigate("/documents");
   };
-
+  if (error && !document)
     return (
       <AdminLayout>
-    <div className="min-h-screen bg-slate-50 p-6">
-      {/* Back Button */}
-      <button
-        className="mb-[18px] border-none bg-transparent text-blue-600 hover:underline cursor-pointer"
-        onClick={() => navigate(`/documents/${id}`)}
-      >
-        ← Back to Document
-      </button>
-
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="mb-[5px] text-2xl font-bold text-gray-900">
-            Review Document
-          </h1>
-          <p className="m-0 text-gray-500">Student Transcript 2026.pdf</p>
+        <div className="p-6 text-red-700">{error}</div>
+      </AdminLayout>
+    );
+  if (!document)
+    return (
+      <AdminLayout>
+        <div className="p-6">Loading document...</div>
+      </AdminLayout>
+    );
+  return (
+    <AdminLayout>
+      <div className="min-h-screen bg-slate-50 p-6">
+        <button
+          className="mb-5 text-blue-600 hover:underline"
+          onClick={() => navigate(`/documents/${id}`)}
+        >
+          ← Back to Document
+        </button>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Review Document</h1>
+            <p className="text-gray-500">{document.title}</p>
+          </div>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold">
+            {document.status}
+          </span>
         </div>
-
-        <span className="rounded-full bg-amber-100 px-3.5 py-1.5 text-xs font-semibold text-amber-700">
-          Pending Review
-        </span>
-      </div>
-
-      {/* Main Review Layout */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.5fr_1fr]">
-        {/* Document Preview Box */}
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <div className="flex items-center justify-between bg-gray-800 px-4 py-[14px] text-white">
-            <span className="text-sm font-medium">
-              Student Transcript 2026.pdf
-            </span>
-            <button
-              className="rounded-md border-none bg-gray-700 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-600 cursor-pointer"
-              onClick={() => navigate(`/documents/${id}/preview`)}
-            >
-              Full Preview
-            </button>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.5fr_1fr]">
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <div className="flex items-center justify-between bg-gray-800 px-4 py-3 text-white">
+              <span className="text-sm">{document.fileName}</span>
+              <button
+                className="rounded bg-gray-700 px-3 py-1.5 text-xs"
+                onClick={() => navigate(`/documents/${id}/preview`)}
+              >
+                Full Preview
+              </button>
+            </div>
+            <iframe
+              title={document.title}
+              src={getDocumentUrl(document.fileUrl)}
+              className="h-175 w-full"
+            />
           </div>
-
-          <div className="flex min-h-[700px] justify-center bg-gray-200 p-[30px]">
-            <div className="min-h-[600px] w-[80%] bg-white p-[45px] shadow-md">
-              <div className="text-center text-[50px]">📄</div>
-
-              <h2 className="mb-[25px] text-center text-xl font-bold text-gray-900">
-                Student Transcript
-              </h2>
-
-              <p className="text-gray-700 leading-relaxed">
-                Academic Year: 2026
-              </p>
-
-              <hr className="my-4 border-gray-200" />
-
-              <p className="text-gray-700 leading-relaxed">
-                Student Name: Sample Student
-              </p>
-              <p className="text-gray-700 leading-relaxed">
-                Student ID: STU-2026-001
-              </p>
-              <p className="text-gray-700 leading-relaxed">
-                Department: Computer Science
-              </p>
-
-              <br />
-
-              <p className="text-gray-700 leading-relaxed">
-                This area represents the document that the reviewer needs to
-                inspect.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Review Side Panel */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mt-0 text-lg font-semibold text-gray-900">
-            Document Information
-          </h2>
-
-          <div className="divide-y divide-slate-100">
-            <div className="flex justify-between py-[13px]">
-              <span className="text-gray-500">Uploaded By</span>
-              <strong className="text-gray-900">Admin</strong>
-            </div>
-
-            <div className="flex justify-between py-[13px]">
-              <span className="text-gray-500">Upload Date</span>
-              <strong className="text-gray-900">31 Aug 2026</strong>
-            </div>
-
-            <div className="flex justify-between py-[13px]">
-              <span className="text-gray-500">Document Type</span>
-              <strong className="text-gray-900">PDF</strong>
-            </div>
-
-            <div className="flex justify-between py-[13px]">
-              <span className="text-gray-500">Category</span>
-              <strong className="text-gray-900">Academic</strong>
-            </div>
-          </div>
-
-          <hr className="my-5 border-gray-200" />
-
-          <h2 className="text-lg font-semibold text-gray-900">Review</h2>
-
-          <label className="mb-2 mt-[20px] block text-sm font-semibold text-gray-700">
-            Review Comment
-          </label>
-
-          <textarea
-            rows={7}
-            placeholder="Enter your review comment..."
-            className="w-full resize-y rounded-lg border border-gray-300 p-3 font-sans text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-          />
-
-          <div className="mt-[15px] grid grid-cols-2 gap-[10px]">
-            <button
-              className="rounded-lg border-none bg-red-600 px-[15px] py-[11px] font-semibold text-white transition-colors hover:bg-red-700 cursor-pointer"
-              onClick={() => setShowReject(true)}
-            >
-              Reject
-            </button>
-
-            <button
-              className="rounded-lg border-none bg-green-600 px-[15px] py-[11px] font-semibold text-white transition-colors hover:bg-green-700 cursor-pointer"
-              onClick={handleApprove}
-            >
-              Approve
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Reject Modal */}
-      {showReject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-5">
-          <div className="w-full max-w-[500px] rounded-xl bg-white p-[25px] shadow-xl">
-            <h2 className="mt-0 text-xl font-bold text-gray-900">
-              Reject Document
-            </h2>
-
-            <p className="mb-4 text-sm text-gray-500">
-              Please confirm that you want to reject this document.
-            </p>
-
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <h2 className="text-lg font-semibold">Review</h2>
+            <dl className="divide-y divide-slate-100">
+              {[
+                ["Type", document.type],
+                ["Student", document.student?.name || "-"],
+                ["Uploaded", new Date(document.uploadedAt).toLocaleString()],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between py-3">
+                  <dt className="text-gray-500">{label}</dt>
+                  <dd className="font-semibold">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <label className="mb-2 mt-5 block text-sm font-semibold">
+              Review Comment
+            </label>
             <textarea
-              rows={5}
-              placeholder="Enter reason for rejection..."
-              className="w-full resize-y rounded-lg border border-gray-300 p-3 font-sans text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              rows={7}
+              className="w-full rounded-lg border border-gray-300 p-3"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
             />
-
-            <div className="mt-[15px] flex justify-end gap-2.5">
+            {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+            <div className="mt-4 grid grid-cols-2 gap-2">
               <button
-                className="rounded-lg border-none bg-gray-100 px-[15px] py-[11px] font-semibold text-gray-700 transition-colors hover:bg-gray-200 cursor-pointer"
-                onClick={() => setShowReject(false)}
+                disabled={saving}
+                className="rounded-lg bg-red-600 px-4 py-2.5 font-semibold text-white disabled:opacity-50"
+                onClick={() => void submitReview("REJECTED")}
               >
-                Cancel
+                Reject
               </button>
-
               <button
-                className="rounded-lg border-none bg-red-600 px-[15px] py-[11px] font-semibold text-white transition-colors hover:bg-red-700 cursor-pointer"
-                onClick={handleReject}
+                disabled={saving}
+                className="rounded-lg bg-green-600 px-4 py-2.5 font-semibold text-white disabled:opacity-50"
+                onClick={() => void submitReview("VERIFIED")}
               >
-                Confirm Rejection
+                Approve
               </button>
             </div>
           </div>
         </div>
-      )}
-            </div>
+      </div>
     </AdminLayout>
   );
 };
-
 export default ReviewDocument;

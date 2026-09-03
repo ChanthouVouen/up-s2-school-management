@@ -9,14 +9,26 @@
 */
 -- AlterTable
 ALTER TABLE `documents` ADD COLUMN `description` TEXT NULL,
-    ADD COLUMN `fileName` VARCHAR(191) NOT NULL,
-    ADD COLUMN `fileSize` INTEGER NULL,
-    ADD COLUMN `fileType` VARCHAR(191) NOT NULL,
-    ADD COLUMN `fileUrl` VARCHAR(191) NOT NULL,
-    ADD COLUMN `reviewComment` TEXT NULL,
-    ADD COLUMN `reviewedAt` DATETIME(3) NULL,
-    ADD COLUMN `reviewedBy` VARCHAR(191) NULL,
-    ADD COLUMN `updatedAt` DATETIME(3) NOT NULL;
+  ADD COLUMN `fileName` VARCHAR(191) NULL,
+  ADD COLUMN `fileSize` INTEGER NULL,
+  ADD COLUMN `fileType` VARCHAR(191) NULL,
+  ADD COLUMN `fileUrl` VARCHAR(191) NULL,
+  ADD COLUMN `reviewComment` TEXT NULL,
+  ADD COLUMN `reviewedAt` DATETIME(3) NULL,
+  ADD COLUMN `reviewedBy` VARCHAR(191) NULL,
+  ADD COLUMN `updatedAt` DATETIME(3) NULL;
+
+UPDATE `documents`
+SET `fileName` = CONCAT('legacy-document-', `id`),
+  `fileType` = 'application/octet-stream',
+  `fileUrl` = '',
+  `updatedAt` = COALESCE(`createdAt`, CURRENT_TIMESTAMP(3));
+
+ALTER TABLE `documents`
+  MODIFY `fileName` VARCHAR(191) NOT NULL,
+  MODIFY `fileType` VARCHAR(191) NOT NULL,
+  MODIFY `fileUrl` VARCHAR(191) NOT NULL,
+  MODIFY `updatedAt` DATETIME(3) NOT NULL;
 
 -- CreateTable
 CREATE TABLE `document_reviews` (

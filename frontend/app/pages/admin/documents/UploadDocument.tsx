@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import AdminLayout from "../../../layouts/AdminLayout";
+import {
+  uploadDocument,
+  DocumentType,
+} from "../../../services/documentService";
 
 const UploadDocument: React.FC = () => {
   const navigate = useNavigate();
@@ -9,6 +13,9 @@ const UploadDocument: React.FC = () => {
   const [documentName, setDocumentName] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
+  const [type, setType] = useState<DocumentType>("OTHER");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const handleFileChange = (selectedFile: File | null) => {
     if (!selectedFile) return;
@@ -20,7 +27,7 @@ const UploadDocument: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!file) {
@@ -28,16 +35,21 @@ const UploadDocument: React.FC = () => {
       return;
     }
 
-    console.log({
-      documentName,
-      category,
-      description,
-      file,
-    });
-
-    alert("Document uploaded successfully!");
-
-    navigate("/documents");
+    setIsSubmitting(true);
+    setError("");
+    const formData = new FormData();
+    formData.append("title", documentName);
+    formData.append("type", type);
+    formData.append("description", description);
+    formData.append("file", file);
+    try {
+      await uploadDocument(formData);
+      navigate("/documents");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Unable to upload document.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -80,13 +92,15 @@ const UploadDocument: React.FC = () => {
                 Document Type
               </label>
               <select
-                defaultValue="PDF"
+                value={type}
+                onChange={(e) => setType(e.target.value as DocumentType)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               >
-                <option value="PDF">PDF</option>
-                <option value="DOCX">Word Document</option>
-                <option value="XLSX">Excel</option>
-                <option value="IMAGE">Image</option>
+                <option value="DIPLOMA">Diploma</option>
+                <option value="ID">ID</option>
+                <option value="TRANSCRIPT">Transcript</option>
+                <option value="CERTIFICATE">Certificate</option>
+                <option value="OTHER">Other</option>
               </select>
             </div>
 
@@ -166,6 +180,11 @@ const UploadDocument: React.FC = () => {
             />
           </div>
 
+          {error && (
+            <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </p>
+          )}
           {/* Form Actions */}
           <div className="flex justify-end gap-2.5 border-t border-gray-200 pt-[10px]">
             <button
@@ -180,7 +199,7 @@ const UploadDocument: React.FC = () => {
               type="submit"
               className="rounded-lg border-none bg-blue-600 px-[18px] py-[11px] text-sm font-semibold text-white transition-colors hover:bg-blue-700 cursor-pointer"
             >
-              Upload Document
+              {isSubmitting ? "Uploading..." : "Upload Document"}
             </button>
           </div>
         </form>
