@@ -21,6 +21,16 @@ enum PaymentStatus {
 }
 
 enum ApplicationStatus {
+  REGISTRATION
+  DOCUMENT_SUBMISSION
+  DOCUMENT_REVIEW
+  DOCUMENTS_APPROVED
+  SCHOLARSHIP_APPLICATION
+  APPLICATION_SUBMITTED
+  SCHOOL_REVIEW
+  SCHOOL_APPROVED
+  PAYMENT
+  ENROLLED
   PENDING
   APPROVED
   REJECTED
@@ -102,6 +112,7 @@ model User {
   name      String
   roleId    String
   role      Role     @relation(fields: [roleId], references: [id])
+  applications Application[] @relation("ApplicationResponsibleStaff")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -153,14 +164,24 @@ model StudentHistory {
 }
 
 model Application {
-  id            Int               @id @default(autoincrement())
-  applicantName String
-  email         String
-  program       String
-  status        ApplicationStatus @default(PENDING)
-  studentId     Int?
-  student       Student?          @relation(fields: [studentId], references: [id])
-  createdAt     DateTime          @default(now())
+  id                  Int               @id @default(autoincrement())
+  applicantName       String
+  email               String
+  program             String
+  applicationDate     DateTime          @default(now())
+  status              ApplicationStatus @default(REGISTRATION)
+  studentId           Int?
+  student             Student?          @relation(fields: [studentId], references: [id])
+  partnerSchoolId     Int?
+  partnerSchool       PartnerSchool?    @relation(fields: [partnerSchoolId], references: [id])
+  responsibleStaffId  String?
+  responsibleStaff    User?             @relation("ApplicationResponsibleStaff", fields: [responsibleStaffId], references: [id], onDelete: SetNull)
+  scholarshipRequested Boolean           @default(false)
+  scholarshipDetails  String?           @db.Text
+  notes               String?           @db.Text
+  approvalResult      String?           @db.Text
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
   @@map("applications")
 }
@@ -238,6 +259,7 @@ model PartnerSchool {
   updatedAt     DateTime            @updatedAt
   students      Student[]
   mous          Mou[]
+  applications  Application[]
 
   @@map("partner_schools")
 }

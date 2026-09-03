@@ -16,6 +16,7 @@ import partnerSchoolsRouter from './routes/partnerSchools';
 import activityLogsRouter from './routes/activityLogs';
 import settingsRouter from './routes/settings';
 import documentRouter from './routes/document';
+import applicationsRouter from './routes/applications';
 import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
 import path from 'path';
@@ -46,6 +47,8 @@ app.use('/api/settings', settingsRouter);
 app.use('/documents', documentRouter);
 app.use('/api/documents', documentRouter);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/applications', applicationsRouter);
+app.use('/api/applications', applicationsRouter);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
