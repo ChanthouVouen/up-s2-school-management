@@ -43,9 +43,10 @@ export interface Student {
   documents?: any[];
   histories?: StudentHistoryItem[];
   _count?: {
-    documents: number;
-    applications: number;
-    histories: number;
+    documents?: number;
+    applications?: number;
+    histories?: number;
+    payments?: number;
   };
 }
 
@@ -104,6 +105,12 @@ export const fetchStudents = async (params?: StudentQueryParams): Promise<Studen
 
 export const fetchStudentById = async (id: number): Promise<Student> => {
   const response = await api.get(`/students/${id}`);
+  return response.data;
+};
+
+/** The logged-in STUDENT-role user's own profile, application, and enrollment status. */
+export const fetchMyProfile = async (): Promise<Student> => {
+  const response = await api.get("/students/me");
   return response.data;
 };
 

@@ -2,6 +2,26 @@ import { RequestHandler } from 'express';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
 import { StudentStatus, PaymentStatus } from '../types/enums';
+import { getStudentForUser } from '../utils/resolveStudent';
+
+// GET /students/me - The logged-in student's own profile + application/enrollment status
+export const getMyProfile: RequestHandler = asyncHandler(async (req, res) => {
+  const student = await getStudentForUser(req.user!.id);
+  if (!student) {
+    res.status(404).json({ message: 'No student profile linked to this account' });
+    return;
+  }
+
+  const fullStudent = await prisma.student.findUnique({
+    where: { id: student.id },
+    include: {
+      applications: { orderBy: { createdAt: 'desc' } },
+      _count: { select: { documents: true, payments: true } },
+    },
+  });
+
+  res.status(200).json(fullStudent);
+});
 
 // GET /students - List students with search, filters & pagination
 export const getStudents: RequestHandler = asyncHandler(async (req, res) => {

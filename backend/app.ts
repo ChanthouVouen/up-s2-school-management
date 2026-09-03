@@ -19,6 +19,9 @@ import settingsRouter from './routes/settings';
 import applicationsRouter from './routes/applications';
 import idCardsRouter from './routes/idCards';
 import uploadRouter from './routes/upload';
+import documentsRouter from './routes/documents';
+import paymentsRouter from './routes/payments';
+import inquiriesRouter from './routes/inquiries';
 
 import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
@@ -55,6 +58,12 @@ app.use('/upload', uploadRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/id-cards', idCardsRouter);
 app.use('/api/id-cards', idCardsRouter);
+app.use('/documents', documentsRouter);
+app.use('/api/documents', documentsRouter);
+app.use('/payments', paymentsRouter);
+app.use('/api/payments', paymentsRouter);
+app.use('/inquiries', inquiriesRouter);
+app.use('/api/inquiries', inquiriesRouter);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

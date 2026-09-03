@@ -8,11 +8,15 @@ import {
   addMou,
   updateMou,
   deleteMou,
+  getPublicPartnerSchools,
 } from '../controllers/partnerSchools.controller';
 import { authenticate, requirePermission } from '../middlewares/auth.middleware';
 import { PERMISSIONS } from '../types/permissions';
 
 const router = Router();
+
+// Guest-safe list for the public admission form — must be registered before the auth guard below.
+router.get('/public', getPublicPartnerSchools);
 
 router.use(authenticate);
 

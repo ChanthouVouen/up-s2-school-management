@@ -19,6 +19,27 @@ export const getSettings: RequestHandler = asyncHandler(async (_req, res) => {
   res.status(200).json(settings);
 });
 
+// GET /settings/public - Guest-safe subset for the public welcome page (no auth)
+export const getPublicSettings: RequestHandler = asyncHandler(async (_req, res) => {
+  const settings = await prisma.organizationSetting.upsert({
+    where: { id: 1 },
+    update: {},
+    create: DEFAULT_SETTINGS,
+  });
+
+  res.status(200).json({
+    orgName: settings.orgName,
+    slogan: settings.slogan,
+    logoUrl: settings.logoUrl,
+    primaryEmail: settings.primaryEmail,
+    supportPhone: settings.supportPhone,
+    websiteUrl: settings.websiteUrl,
+    streetAddress: settings.streetAddress,
+    city: settings.city,
+    country: settings.country,
+  });
+});
+
 // PUT /settings - Update the organization settings
 export const updateSettings: RequestHandler = asyncHandler(async (req, res) => {
   const parsed = updateSettingsSchema.safeParse(req.body);

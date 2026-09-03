@@ -18,12 +18,23 @@ import { PERMISSIONS } from "./types/permissions";
 import SystemActivityLogs from "./pages/admin/activity-log";
 import OrganizationSettings from "./pages/admin/setting";
 import ApplicationsPage, { ApplicationDetailPage } from "./pages/admin/applications";
+import DocumentsPage from "./pages/admin/documents";
+import PaymentsPage from "./pages/admin/payments";
+import InquiriesPage from "./pages/admin/inquiries";
 
 import IdCardsPage from "./pages/admin/id-cards";
 import { VerifyCardPage } from "./pages/admin/id-cards/VerifyCardPage";
 
+import WelcomePage from "./pages/none-admin/welcome";
+import ApplyPage from "./pages/none-admin/apply";
+import StudentLayout from "./pages/none-admin/student/StudentLayout";
+import StudentOverview from "./pages/none-admin/student/Overview";
+import StudentDocuments from "./pages/none-admin/student/Documents";
+import StudentPayments from "./pages/none-admin/student/Payments";
+import StudentRequests from "./pages/none-admin/student/Requests";
+
 const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
-  "/": Dashboard,
+  "/admin": Dashboard,
   "/students": StudentsPage,
   "/users": UserManagementPage,
   "/role-permission": RoleBasePermission,
@@ -31,6 +42,9 @@ const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/activity-logs": SystemActivityLogs,
   "/setting": OrganizationSettings,
   "/applications": ApplicationsPage,
+  "/documents": DocumentsPage,
+  "/payments": PaymentsPage,
+  "/inquiries": InquiriesPage,
 };
 
 const allAdminPaths = NAV_CATEGORIES.flatMap((category) => category.items.map((item) => item.path));
@@ -56,6 +70,10 @@ function renderAdminRoute(path: string) {
 export function App() {
   return (
     <Routes>
+      {/* Public marketing site + self-service admissions */}
+      <Route path="/" element={<WelcomePage />} />
+      <Route path="/apply" element={<ApplyPage />} />
+
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -63,6 +81,16 @@ export function App() {
 
       {/* Public QR Code Verification Route */}
       <Route path="/verify-card" element={<VerifyCardPage />} />
+
+      {/* Student portal — STUDENT role only */}
+      <Route element={<ProtectedRoute allowedRoles={["STUDENT"]} />}>
+        <Route element={<StudentLayout />}>
+          <Route path="/student" element={<StudentOverview />} />
+          <Route path="/student/documents" element={<StudentDocuments />} />
+          <Route path="/student/payments" element={<StudentPayments />} />
+          <Route path="/student/requests" element={<StudentRequests />} />
+        </Route>
+      </Route>
 
       {/* Any authenticated user — no specific permission required */}
       <Route element={<ProtectedRoute />}>
