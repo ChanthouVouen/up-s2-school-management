@@ -23,7 +23,6 @@ import uploadRouter from './routes/upload';
 
 import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
-import path from 'path';
 
 const app = express();
 
