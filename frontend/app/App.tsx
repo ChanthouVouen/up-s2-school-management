@@ -12,6 +12,11 @@ import ComingSoonPage from "./pages/admin/ComingSoonPage";
 import { NAV_CATEGORIES, PATH_PERMISSIONS } from "./layouts/adminNav";
 import Dashboard from './pages/admin/AdminDashboard';
 import RoleBasePermission from "./pages/admin/role-permission";
+import DocumentList from "./pages/admin/documents/DocumentList";
+import UploadDocument from "./pages/admin/documents/UploadDocument";
+import DocumentDetail from "./pages/admin/documents/DocumentDetail";
+import DocumentPreview from "./pages/admin/documents/DocumentPreview";
+import ReviewDocument from "./pages/admin/documents/ReviewDocument";
 import PartnerSchoolsPage from "./pages/admin/partner-schools";
 import PartnerSchoolDetailPage from "./pages/admin/partner-schools/detail";
 import { PERMISSIONS } from "./types/permissions";
@@ -27,6 +32,7 @@ const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/students": StudentsPage,
   "/users": UserManagementPage,
   "/role-permission": RoleBasePermission,
+  "/documents": DocumentList,
   "/partner-schools": PartnerSchoolsPage,
   "/activity-logs": SystemActivityLogs,
   "/setting": OrganizationSettings,
@@ -67,6 +73,13 @@ export function App() {
       {/* Any authenticated user — no specific permission required */}
       <Route element={<ProtectedRoute />}>
         {openPaths.map(renderAdminRoute)}
+        <Route path="/documents/upload" element={<UploadDocument />} />
+
+        <Route path="/documents/:id" element={<DocumentDetail />} />
+
+        <Route path="/documents/:id/preview" element={<DocumentPreview />} />
+
+        <Route path="/documents/:id/review" element={<ReviewDocument />} />
       </Route>
 
       {/* Partner school detail page route */}
@@ -80,7 +93,10 @@ export function App() {
 
       {/* Permission-gated routes, one ProtectedRoute per required permission */}
       {Array.from(pathsByPermission.entries()).map(([permission, paths]) => (
-        <Route key={permission} element={<ProtectedRoute requiredPermissions={[permission]} />}>
+        <Route
+          key={permission}
+          element={<ProtectedRoute requiredPermissions={[permission]} />}
+        >
           {paths.map(renderAdminRoute)}
         </Route>
       ))}

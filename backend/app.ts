@@ -16,12 +16,14 @@ import studentsRouter from './routes/students';
 import partnerSchoolsRouter from './routes/partnerSchools';
 import activityLogsRouter from './routes/activityLogs';
 import settingsRouter from './routes/settings';
+import documentRouter from './routes/document';
 import applicationsRouter from './routes/applications';
 import idCardsRouter from './routes/idCards';
 import uploadRouter from './routes/upload';
 
 import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
+import path from 'path';
 
 const app = express();
 
@@ -49,6 +51,9 @@ app.use('/activity-logs', activityLogsRouter);
 app.use('/api/activity-logs', activityLogsRouter);
 app.use('/settings', settingsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/documents', documentRouter);
+app.use('/api/documents', documentRouter);
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/applications', applicationsRouter);
 app.use('/api/applications', applicationsRouter);
 app.use('/upload', uploadRouter);
