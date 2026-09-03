@@ -15,6 +15,7 @@ import studentsRouter from './routes/students';
 import partnerSchoolsRouter from './routes/partnerSchools';
 import activityLogsRouter from './routes/activityLogs';
 import settingsRouter from './routes/settings';
+import applicationsRouter from './routes/applications';
 import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
 
@@ -41,6 +42,8 @@ app.use('/activity-logs', activityLogsRouter);
 app.use('/api/activity-logs', activityLogsRouter);
 app.use('/settings', settingsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/applications', applicationsRouter);
+app.use('/api/applications', applicationsRouter);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

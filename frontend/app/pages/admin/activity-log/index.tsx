@@ -36,7 +36,7 @@ const MODULE_META: Record<string, { label: string; icon: typeof GraduationCap }>
     SYSTEM: { label: 'System', icon: Settings },
 };
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 5;
 
 function getModuleMeta(type: string | null) {
     return MODULE_META[type ?? ''] ?? { label: 'General', icon: Settings };
