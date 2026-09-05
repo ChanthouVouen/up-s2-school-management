@@ -22,7 +22,7 @@ export const checkout = async (payload: { amount: number; method: string; descri
   return res.data;
 };
 
-export const getPayments = async (): Promise<Payment[]> => {
-  const res = await api.get<{ data: Payment[] }>("/payments");
+export const getPayments = async (params?: { studentId?: number }): Promise<Payment[]> => {
+  const res = await api.get<{ data: Payment[] }>("/payments", { params });
   return res.data.data;
 };

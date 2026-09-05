@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
+import { BASE_TUITION_FEE } from '../constants/fees';
 
 function applicationCode(id: number, createdAt: Date) {
   return `APP-${createdAt.getFullYear()}-${String(id).padStart(4, '0')}`;
@@ -433,12 +434,16 @@ export const awardScholarship: RequestHandler = asyncHandler(async (req, res) =>
 
   let awardDescription = '';
   let updatedPartnerSchoolId: number | null = student.partnerSchoolId;
+  let awardedDiscountType: 'PERCENTAGE' | 'FIXED_AMOUNT' = 'PERCENTAGE';
+  let awardedDiscountValue = 0;
 
   if (track === 'GRADE_A') {
     const gradeLetter = req.body.gradeLetter ? String(req.body.gradeLetter).trim().toUpperCase() : 'A';
     const val = discountValue !== undefined ? Number(discountValue) : 100;
     const typeLabel = discountType === 'FIXED_AMOUNT' ? '$' : '%';
     awardDescription = `🏆 National Exam Grade ${gradeLetter} Merit: ${val}${typeLabel} Tuition Waiver awarded. ${notes || ''}`.trim();
+    awardedDiscountType = discountType === 'FIXED_AMOUNT' ? 'FIXED_AMOUNT' : 'PERCENTAGE';
+    awardedDiscountValue = val;
   } else if (track === 'SPECIAL_CODE') {
     const codeStr = String(specialCode || 'UP-SCHOLARSHIP').trim().toUpperCase();
     const val = discountValue ? Number(discountValue) : 50;
@@ -451,6 +456,8 @@ export const awardScholarship: RequestHandler = asyncHandler(async (req, res) =>
     });
 
     awardDescription = `🎟️ Special Scholarship Code applied: ${codeStr} (${val}${typeLabel} Tuition Reduction). ${notes || ''}`.trim();
+    awardedDiscountType = discountType === 'FIXED_AMOUNT' ? 'FIXED_AMOUNT' : 'PERCENTAGE';
+    awardedDiscountValue = val;
   } else {
     // MOU_PARTNER
     const parsedPartnerSchoolId = parseInt(String(partnerSchoolId), 10);
@@ -476,6 +483,10 @@ export const awardScholarship: RequestHandler = asyncHandler(async (req, res) =>
       : 'partner agreement';
 
     awardDescription = `🏫 MOU Partner School: ${partnerSchool.name} (${discountInfo}). ${notes || ''}`.trim();
+    if (activeMou) {
+      awardedDiscountType = activeMou.discountType === 'FIXED_AMOUNT' ? 'FIXED_AMOUNT' : 'PERCENTAGE';
+      awardedDiscountValue = activeMou.discountValue;
+    }
   }
 
   const updatedStudent = await prisma.student.update({
@@ -508,13 +519,38 @@ export const awardScholarship: RequestHandler = asyncHandler(async (req, res) =>
 
   // Update application scholarship details if student has an application
   if (student.applications && student.applications.length > 0) {
+    const application = student.applications[0];
     await prisma.application.update({
-      where: { id: student.applications[0].id },
+      where: { id: application.id },
       data: {
         scholarshipRequested: true,
         scholarshipDetails: awardDescription,
+        discountType: awardedDiscountType,
+        discountValue: awardedDiscountValue,
       },
     });
+
+    // The application may already have been approved (and its invoice generated) before this scholarship
+    // was awarded — recalculate that outstanding invoice so it reflects the new discount instead of going stale.
+    const pendingInvoice = await prisma.payment.findFirst({
+      where: { studentId: parsedStudentId, status: 'PENDING', reference: { startsWith: `INV-${application.id}-` } },
+    });
+    if (pendingInvoice) {
+      const discountAmount = awardedDiscountType === 'FIXED_AMOUNT' ? awardedDiscountValue : (BASE_TUITION_FEE * awardedDiscountValue) / 100;
+      const amountDue = Math.max(0, BASE_TUITION_FEE - discountAmount);
+      const discountNote = discountAmount > 0 ? ` minus a $${discountAmount.toFixed(2)} scholarship discount` : '';
+      await prisma.payment.update({
+        where: { id: pendingInvoice.id },
+        data: {
+          amount: amountDue,
+          status: amountDue === 0 ? 'COMPLETED' : 'PENDING',
+          description: `Tuition for ${application.program}: $${BASE_TUITION_FEE.toFixed(2)}${discountNote} = $${amountDue.toFixed(2)} due.`,
+        },
+      });
+      if (amountDue === 0) {
+        await prisma.student.update({ where: { id: parsedStudentId }, data: { paymentStatus: 'PAID' } });
+      }
+    }
   }
 
   // Record global activity log
@@ -639,6 +675,8 @@ export const revokeScholarship: RequestHandler = asyncHandler(async (req, res) =
       data: {
         scholarshipRequested: false,
         scholarshipDetails: null,
+        discountType: null,
+        discountValue: null,
       },
     });
   }

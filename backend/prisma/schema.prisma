@@ -213,6 +213,8 @@ model Application {
   responsibleStaff    User?             @relation("ApplicationResponsibleStaff", fields: [responsibleStaffId], references: [id], onDelete: SetNull)
   scholarshipRequested Boolean           @default(false)
   scholarshipDetails  String?           @db.Text
+  discountType        DiscountType?
+  discountValue       Float?
   notes               String?           @db.Text
   approvalResult      String?           @db.Text
   createdAt           DateTime          @default(now())

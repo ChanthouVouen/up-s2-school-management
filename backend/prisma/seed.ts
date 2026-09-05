@@ -52,6 +52,8 @@ const PERMISSIONS_BY_ROLE = {
     'document:create',
     'document:update',
     'application:view',
+    'application:approve',
+    'application:reject',
     'partner_school:view',
     'partner_school:create',
     'partner_school:update',

@@ -20,6 +20,7 @@ export default function PaymentsPage() {
   }, []);
 
   const total = payments.filter((p) => p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0);
+  const outstanding = payments.filter((p) => p.status === "PENDING").reduce((sum, p) => sum + p.amount, 0);
 
   return (
     <AdminLayout>
@@ -27,6 +28,10 @@ export default function PaymentsPage() {
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "16px 20px" }}>
           <div style={{ color: "#64748b", fontSize: 12 }}>Total collected</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: "#0f172a" }}>${total.toFixed(2)}</div>
+        </div>
+        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "16px 20px" }}>
+          <div style={{ color: "#64748b", fontSize: 12 }}>Outstanding balance</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#a16207" }}>${outstanding.toFixed(2)}</div>
         </div>
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "16px 20px" }}>
           <div style={{ color: "#64748b", fontSize: 12 }}>Transactions</div>
@@ -59,7 +64,10 @@ export default function PaymentsPage() {
               key: "status",
               header: "Status",
               render: (row) => (
-                <Badge bg={row.status === "COMPLETED" ? "#dcfce7" : "#fee2e2"} color={row.status === "COMPLETED" ? "#16a34a" : "#dc2626"}>
+                <Badge
+                  bg={row.status === "COMPLETED" ? "#dcfce7" : row.status === "PENDING" ? "#fef3c7" : "#fee2e2"}
+                  color={row.status === "COMPLETED" ? "#16a34a" : row.status === "PENDING" ? "#a16207" : "#dc2626"}
+                >
                   {row.status}
                 </Badge>
               ),
