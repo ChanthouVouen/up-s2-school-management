@@ -82,6 +82,12 @@ export interface StudentCreateParams {
   department?: string;
   photoUrl?: string;
   partnerSchoolId?: number | null;
+  scholarshipTrack?: "NONE" | "GRADE_A" | "SPECIAL_CODE" | "MOU_PARTNER" | null;
+  specialCode?: string | null;
+  gradeLetter?: string | null;
+  gradeDiscountValue?: number | null;
+  gradeDiscountType?: "PERCENTAGE" | "FIXED_AMOUNT" | null;
+  scholarshipNotes?: string | null;
 }
 
 export interface StudentUpdateParams {
@@ -96,6 +102,12 @@ export interface StudentUpdateParams {
   department?: string;
   photoUrl?: string;
   partnerSchoolId?: number | null;
+  scholarshipTrack?: "NONE" | "GRADE_A" | "SPECIAL_CODE" | "MOU_PARTNER" | null;
+  specialCode?: string | null;
+  gradeLetter?: string | null;
+  gradeDiscountValue?: number | null;
+  gradeDiscountType?: "PERCENTAGE" | "FIXED_AMOUNT" | null;
+  scholarshipNotes?: string | null;
 }
 
 export const fetchStudents = async (params?: StudentQueryParams): Promise<StudentListResponse> => {

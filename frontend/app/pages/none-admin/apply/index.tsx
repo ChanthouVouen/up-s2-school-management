@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
-import { GraduationCap, CheckCircle2, Copy, ArrowLeft } from "lucide-react";
+import { GraduationCap, CheckCircle2, Copy, ArrowLeft, Award, Tag, Building, Sparkles, Check, Loader2 } from "lucide-react";
 import { submitPublicApplication, type ApplyResponse } from "../../../services/applicationService";
 import { fetchPublicPartnerSchools } from "../../../services/partnerSchoolService";
+import { validateScholarshipCode } from "../../../services/scholarshipService";
 import { PROGRAMS } from "../../../constants/programs";
 
 export default function ApplyPage() {
@@ -23,23 +24,113 @@ export default function ApplyPage() {
   const [result, setResult] = useState<ApplyResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // 3 Scholarship Tracks State
+  const [scholarshipTrack, setScholarshipTrack] = useState<"GRADE_A" | "SPECIAL_CODE" | "MOU_PARTNER">("GRADE_A");
+  const [gradeAHighSchool, setGradeAHighSchool] = useState("");
+  const [gradeARollNumber, setGradeARollNumber] = useState("");
+  const [specialCode, setSpecialCode] = useState("");
+  const [specialCodeStatus, setSpecialCodeStatus] = useState<{
+    verifying: boolean;
+    verified: boolean;
+    message: string;
+    discountInfo?: string;
+  } | null>(null);
+
   useEffect(() => {
-    if (form.scholarshipRequested && partnerSchools.length === 0) {
+    if (form.scholarshipRequested && scholarshipTrack === "MOU_PARTNER" && partnerSchools.length === 0) {
       fetchPublicPartnerSchools()
         .then(setPartnerSchools)
         .catch(() => setPartnerSchools([]));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.scholarshipRequested]);
+  }, [form.scholarshipRequested, scholarshipTrack]);
+
+  const handleVerifyCode = async () => {
+    if (!specialCode.trim()) return;
+    setSpecialCodeStatus({ verifying: true, verified: false, message: "Validating code..." });
+    try {
+      const res = await validateScholarshipCode(specialCode);
+      if (res.valid) {
+        setSpecialCodeStatus({
+          verifying: false,
+          verified: true,
+          message: res.message,
+          discountInfo: `${res.data?.discountValue}${res.data?.discountType === "PERCENTAGE" ? "%" : "$"} Off`,
+        });
+      } else {
+        setSpecialCodeStatus({
+          verifying: false,
+          verified: false,
+          message: res.message || "Invalid code",
+        });
+      }
+    } catch (err: any) {
+      setSpecialCodeStatus({
+        verifying: false,
+        verified: false,
+        message: err?.response?.data?.message || "Invalid or inactive promo code",
+      });
+    }
+  };
+
+  const handleSelectTrack = (track: "GRADE_A" | "SPECIAL_CODE" | "MOU_PARTNER") => {
+    setScholarshipTrack(track);
+    if (track === "GRADE_A") {
+      setSpecialCode("");
+      setSpecialCodeStatus(null);
+      setForm((f) => ({ ...f, partnerSchoolId: "" }));
+    } else if (track === "SPECIAL_CODE") {
+      setGradeAHighSchool("");
+      setGradeARollNumber("");
+      setForm((f) => ({ ...f, partnerSchoolId: "" }));
+    } else {
+      setGradeAHighSchool("");
+      setGradeARollNumber("");
+      setSpecialCode("");
+      setSpecialCodeStatus(null);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
+      let finalScholarshipDetails = "";
+      let finalPartnerSchoolId: number | null = null;
+
+      if (form.scholarshipRequested) {
+        if (scholarshipTrack === "GRADE_A") {
+          finalScholarshipDetails = `Grade A National Exam Merit: 100% Tuition Waiver (High School: ${gradeAHighSchool || "National Exam"}, Certificate/Roll: ${gradeARollNumber || "Pending Verification"})`;
+        } else if (scholarshipTrack === "SPECIAL_CODE") {
+          const trimmedCode = specialCode.trim().toUpperCase();
+          if (!trimmedCode) {
+            setError("Please enter a valid scholarship code.");
+            setSubmitting(false);
+            return;
+          }
+          if (specialCodeStatus && !specialCodeStatus.verified) {
+            setError(specialCodeStatus.message || "Please enter a valid active scholarship code.");
+            setSubmitting(false);
+            return;
+          }
+          finalScholarshipDetails = `Special Scholarship Code: ${trimmedCode} (${specialCodeStatus?.discountInfo || "Voucher Applied"})`;
+        } else {
+          if (!form.partnerSchoolId) {
+            setError("Please select your partner institution.");
+            setSubmitting(false);
+            return;
+          }
+          finalPartnerSchoolId = Number(form.partnerSchoolId);
+          const selectedSchool = partnerSchools.find((s) => String(s.id) === String(form.partnerSchoolId));
+          finalScholarshipDetails = `MOU Partner School: ${selectedSchool?.name || "Partner Institution"}`;
+        }
+      }
+
       const response = await submitPublicApplication({
         ...form,
-        partnerSchoolId: form.partnerSchoolId ? Number(form.partnerSchoolId) : null,
+        scholarshipDetails: finalScholarshipDetails || form.scholarshipDetails,
+        partnerSchoolId: finalPartnerSchoolId,
       });
       setResult(response);
     } catch (err: any) {
@@ -203,33 +294,162 @@ export default function ApplyPage() {
             </div>
 
             {form.scholarshipRequested && (
-              <div className="space-y-3 rounded-lg border border-blue-100 bg-blue-50/50 p-4">
+              <div className="space-y-4 rounded-xl border border-blue-200 bg-blue-50/70 p-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Your current / partner school
-                  </label>
-                  <select
-                    value={form.partnerSchoolId}
-                    onChange={(e) => setForm((f) => ({ ...f, partnerSchoolId: e.target.value }))}
-                    className="w-full rounded-md border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none"
-                  >
-                    <option value="">Not affiliated with a partner school</option>
-                    {partnerSchools.map((school) => (
-                      <option key={school.id} value={school.id}>
-                        {school.name}{school.city ? `, ${school.city}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Applicants from our partner schools may be eligible for a partnership discount.
-                  </p>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-blue-900">
+                      Select Scholarship Option
+                    </label>
+                    <span className="text-[11px] font-medium text-slate-500">1 option per student</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTrack("GRADE_A")}
+                      className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-center transition-all ${
+                        scholarshipTrack === "GRADE_A"
+                          ? "border-blue-600 bg-white font-semibold text-blue-700 shadow-sm ring-2 ring-blue-500/20"
+                          : "border-slate-200 bg-white/70 text-slate-600 hover:bg-white"
+                      }`}
+                    >
+                      <Award size={18} className={scholarshipTrack === "GRADE_A" ? "text-blue-600" : "text-slate-400"} />
+                      <span className="text-xs">Grade A Student</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTrack("SPECIAL_CODE")}
+                      className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-center transition-all ${
+                        scholarshipTrack === "SPECIAL_CODE"
+                          ? "border-blue-600 bg-white font-semibold text-blue-700 shadow-sm ring-2 ring-blue-500/20"
+                          : "border-slate-200 bg-white/70 text-slate-600 hover:bg-white"
+                      }`}
+                    >
+                      <Tag size={18} className={scholarshipTrack === "SPECIAL_CODE" ? "text-blue-600" : "text-slate-400"} />
+                      <span className="text-xs">Special Code</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTrack("MOU_PARTNER")}
+                      className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-center transition-all ${
+                        scholarshipTrack === "MOU_PARTNER"
+                          ? "border-blue-600 bg-white font-semibold text-blue-700 shadow-sm ring-2 ring-blue-500/20"
+                          : "border-slate-200 bg-white/70 text-slate-600 hover:bg-white"
+                      }`}
+                    >
+                      <Building size={18} className={scholarshipTrack === "MOU_PARTNER" ? "text-blue-600" : "text-slate-400"} />
+                      <span className="text-xs">Partner School</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* TRACK 1: GRADE A */}
+                {scholarshipTrack === "GRADE_A" && (
+                  <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3.5">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800">
+                      <Sparkles size={14} className="text-emerald-600" />
+                      100% Tuition Waiver for National Exam Grade A Achievers
+                    </div>
+                    <p className="text-xs text-emerald-700/80">
+                      Upload or present your official Grade A BacII exam diploma during document verification to activate your full scholarship.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Graduating High School Name"
+                        value={gradeAHighSchool}
+                        onChange={(e) => setGradeAHighSchool(e.target.value)}
+                        className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Exam Roll or Cert No. (optional)"
+                        value={gradeARollNumber}
+                        onChange={(e) => setGradeARollNumber(e.target.value)}
+                        className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* TRACK 2: SPECIAL CODE */}
+                {scholarshipTrack === "SPECIAL_CODE" && (
+                  <div className="space-y-3 rounded-lg border border-indigo-200 bg-indigo-50/50 p-3.5">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-indigo-900">
+                      <Tag size={14} className="text-indigo-600" />
+                      Enter Scholarship Voucher or Promo Code
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        value={specialCode}
+                        onChange={(e) => {
+                          setSpecialCode(e.target.value);
+                          setSpecialCodeStatus(null);
+                        }}
+                        className="flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs uppercase tracking-wider text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVerifyCode}
+                        disabled={!specialCode.trim() || specialCodeStatus?.verifying}
+                        className="rounded-md bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+                      >
+                        {specialCodeStatus?.verifying ? <Loader2 size={13} className="animate-spin" /> : "Apply Code"}
+                      </button>
+                    </div>
+
+                    {specialCodeStatus && (
+                      <div
+                        className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium ${
+                          specialCodeStatus.verified
+                            ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
+                            : "border border-red-200 bg-red-50 text-red-700"
+                        }`}
+                      >
+                        {specialCodeStatus.verified ? <Check size={14} className="text-emerald-600" /> : null}
+                        <span>{specialCodeStatus.message}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TRACK 3: MOU PARTNER SCHOOL */}
+                {scholarshipTrack === "MOU_PARTNER" && (
+                  <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3.5">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-700">
+                        Select Your Partner Institution
+                      </label>
+                      <select
+                        value={form.partnerSchoolId}
+                        onChange={(e) => setForm((f) => ({ ...f, partnerSchoolId: e.target.value }))}
+                        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none"
+                      >
+                        <option value="">-- Choose affiliated school / university --</option>
+                        {partnerSchools.map((school) => (
+                          <option key={school.id} value={school.id}>
+                            {school.name}{school.city ? `, ${school.city}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        Applicants from recognized partner institutions are automatically granted agreement discount rates.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <textarea
                   rows={2}
-                  placeholder="Briefly tell us why you're applying for a scholarship"
+                  placeholder="Additional notes about your scholarship request (optional)"
                   value={form.scholarshipDetails}
                   onChange={(e) => setForm((f) => ({ ...f, scholarshipDetails: e.target.value }))}
-                  className="w-full rounded-md border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none"
                 />
               </div>
             )}

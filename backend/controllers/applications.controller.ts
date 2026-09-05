@@ -79,6 +79,35 @@ export const createApplication: RequestHandler = asyncHandler(async (req, res) =
     return;
   }
 
+  // Strict Rule: One student can apply for only one scholarship
+  if (Boolean(scholarshipRequested)) {
+    if (studentId) {
+      const existingStudent = await prisma.student.findUnique({
+        where: { id: Number(studentId) },
+        include: { histories: { where: { action: 'SCHOLARSHIP_AWARDED' } } },
+      });
+      if (existingStudent && (existingStudent.partnerSchoolId || existingStudent.histories.length > 0)) {
+        res.status(400).json({
+          message: 'This student already has an active scholarship. Only one scholarship per student is permitted.',
+        });
+        return;
+      }
+    }
+
+    const existingAppWithScholarship = await prisma.application.findFirst({
+      where: {
+        email: email.trim().toLowerCase(),
+        scholarshipRequested: true,
+      },
+    });
+    if (existingAppWithScholarship) {
+      res.status(400).json({
+        message: 'An application with a scholarship has already been submitted for this applicant. Each applicant can apply for only one scholarship.',
+      });
+      return;
+    }
+  }
+
   const application = await prisma.application.create({
     data: {
       applicantName: applicantName.trim(),
@@ -120,6 +149,22 @@ export const applyPublic: RequestHandler = asyncHandler(async (req, res) => {
   if (existingUser) {
     res.status(409).json({ message: 'An account with this email already exists. Please log in to your student portal instead.' });
     return;
+  }
+
+  // Strict Rule: One student can apply for only one scholarship
+  if (Boolean(scholarshipRequested)) {
+    const existingAppWithScholarship = await prisma.application.findFirst({
+      where: {
+        email: normalizedEmail,
+        scholarshipRequested: true,
+      },
+    });
+    if (existingAppWithScholarship) {
+      res.status(400).json({
+        message: 'An application with a scholarship has already been submitted for this email. Each student can apply for only one scholarship.',
+      });
+      return;
+    }
   }
 
   const year = new Date().getFullYear();

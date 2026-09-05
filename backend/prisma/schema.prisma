@@ -241,8 +241,9 @@ model Document {
   reviewComment String?   @db.Text
   reviewedAt    DateTime?
 
+  createdAt  DateTime @default(now())
   uploadedAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt  DateTime @updatedAt
 
   reviews DocumentReview[]
 
@@ -368,4 +369,36 @@ model OrganizationSetting {
   updatedAt     DateTime @updatedAt
 
   @@map("organization_settings")
+}
+
+model GradeScholarship {
+  id            String       @id @default(uuid())
+  grade         String
+  title         String
+  discountType  DiscountType @default(PERCENTAGE)
+  discountValue Float
+  description   String?      @db.Text
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([grade])
+  @@map("grade_scholarships")
+}
+
+model ScholarshipCode {
+  id            String       @id @default(uuid())
+  code          String       @unique
+  title         String
+  discountType  DiscountType @default(PERCENTAGE)
+  discountValue Float
+  description   String?      @db.Text
+  maxUses       Int?
+  usedCount     Int          @default(0)
+  active        Boolean      @default(true)
+  expiresAt     DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("scholarship_codes")
 }

@@ -25,6 +25,7 @@ import OrganizationSettings from "./pages/admin/setting";
 import ApplicationsPage, { ApplicationDetailPage } from "./pages/admin/applications";
 import PaymentsPage from "./pages/admin/payments";
 import InquiriesPage from "./pages/admin/inquiries";
+import ScholarshipsPage from "./pages/admin/scholarships";
 
 import IdCardsPage from "./pages/admin/id-cards";
 import { VerifyCardPage } from "./pages/admin/id-cards/VerifyCardPage";
@@ -49,6 +50,7 @@ const IMPLEMENTED_ADMIN_PAGES: Record<string, ComponentType> = {
   "/applications": ApplicationsPage,
   "/payments": PaymentsPage,
   "/inquiries": InquiriesPage,
+  "/scholarships": ScholarshipsPage,
 };
 
 const allAdminPaths = NAV_CATEGORIES.flatMap((category) => category.items.map((item) => item.path));
