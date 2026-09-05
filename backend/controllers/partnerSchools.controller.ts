@@ -2,6 +2,23 @@ import { RequestHandler } from 'express';
 import prisma from '../lib/prisma';
 
 /**
+ * GET /partner-schools/public - Guest-safe list of active partner schools,
+ * for the public admission form's scholarship/partnership selector (no auth).
+ */
+export const getPublicPartnerSchools: RequestHandler = async (_req, res, next) => {
+  try {
+    const partnerSchools = await prisma.partnerSchool.findMany({
+      where: { status: 'ACTIVE' },
+      select: { id: true, name: true, city: true },
+      orderBy: { name: 'asc' },
+    });
+    res.json({ data: partnerSchools });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * Get all partner schools with filtering, pagination, and statistics overview
  */
 export const getPartnerSchools: RequestHandler = async (req, res, next) => {

@@ -37,6 +37,8 @@ const PERMISSIONS_BY_ROLE = {
     'id_card:view',
     'id_card:generate',
     'id_card:revoke',
+    'inquiry:view',
+    'inquiry:respond',
   ],
   STAFF: [
     'student:view',
@@ -56,7 +58,10 @@ const PERMISSIONS_BY_ROLE = {
     'activity:view',
     'id_card:view',
     'id_card:generate',
+    'inquiry:view',
+    'inquiry:respond',
   ],
+  STUDENT: [],
 } as const;
 
 async function createPermissionsForRoles() {

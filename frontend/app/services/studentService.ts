@@ -43,9 +43,10 @@ export interface Student {
   documents?: any[];
   histories?: StudentHistoryItem[];
   _count?: {
-    documents: number;
-    applications: number;
-    histories: number;
+    documents?: number;
+    applications?: number;
+    histories?: number;
+    payments?: number;
   };
 }
 
@@ -81,6 +82,12 @@ export interface StudentCreateParams {
   department?: string;
   photoUrl?: string;
   partnerSchoolId?: number | null;
+  scholarshipTrack?: "NONE" | "GRADE_A" | "SPECIAL_CODE" | "MOU_PARTNER" | null;
+  specialCode?: string | null;
+  gradeLetter?: string | null;
+  gradeDiscountValue?: number | null;
+  gradeDiscountType?: "PERCENTAGE" | "FIXED_AMOUNT" | null;
+  scholarshipNotes?: string | null;
 }
 
 export interface StudentUpdateParams {
@@ -95,6 +102,12 @@ export interface StudentUpdateParams {
   department?: string;
   photoUrl?: string;
   partnerSchoolId?: number | null;
+  scholarshipTrack?: "NONE" | "GRADE_A" | "SPECIAL_CODE" | "MOU_PARTNER" | null;
+  specialCode?: string | null;
+  gradeLetter?: string | null;
+  gradeDiscountValue?: number | null;
+  gradeDiscountType?: "PERCENTAGE" | "FIXED_AMOUNT" | null;
+  scholarshipNotes?: string | null;
 }
 
 export const fetchStudents = async (params?: StudentQueryParams): Promise<StudentListResponse> => {
@@ -104,6 +117,12 @@ export const fetchStudents = async (params?: StudentQueryParams): Promise<Studen
 
 export const fetchStudentById = async (id: number): Promise<Student> => {
   const response = await api.get(`/students/${id}`);
+  return response.data;
+};
+
+/** The logged-in STUDENT-role user's own profile, application, and enrollment status. */
+export const fetchMyProfile = async (): Promise<Student> => {
+  const response = await api.get("/students/me");
   return response.data;
 };
 

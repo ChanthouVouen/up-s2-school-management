@@ -34,6 +34,8 @@ export const PERMISSIONS = {
   ID_CARD_VIEW: 'id_card:view',
   ID_CARD_GENERATE: 'id_card:generate',
   ID_CARD_REVOKE: 'id_card:revoke',
+  INQUIRY_VIEW: 'inquiry:view',
+  INQUIRY_RESPOND: 'inquiry:respond',
 } as const;
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

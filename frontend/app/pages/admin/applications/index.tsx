@@ -17,26 +17,13 @@ import {
   updateApplicationStatus,
 } from '../../../services/applicationService';
 import { fetchPartnerSchools, PartnerSchool } from '../../../services/partnerSchoolService';
+import { PROGRAMS as PROGRAMMES } from '../../../constants/programs';
 
 const colors: Record<string, { bg: string; color: string }> = {
   PENDING: { bg: '#fef3c7', color: '#a16207' },
   APPROVED: { bg: '#dcfce7', color: '#15803d' },
   REJECTED: { bg: '#fee2e2', color: '#b91c1c' },
 };
-const PROGRAMMES = [
-  'Bachelor of Computer Science',
-  'Bachelor of Information Technology',
-  'Bachelor of Business Administration',
-  'Bachelor of Accounting',
-  'Bachelor of Finance and Banking',
-  'Bachelor of International Business',
-  'Bachelor of English for Communication',
-  'Bachelor of Education',
-  'Bachelor of Architecture',
-  'Bachelor of Civil Engineering',
-  'Bachelor of Law',
-  'Master of Business Administration',
-];
 const label = (status: ApplicationStatus) => status.replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase());
 const formatDate = (value: string) => new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
 

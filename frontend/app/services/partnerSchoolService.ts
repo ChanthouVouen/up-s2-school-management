@@ -126,6 +126,12 @@ export interface MouCreateParams {
   notes?: string;
 }
 
+/** Guest-safe list of active partner schools for the public admission form — no auth required. */
+export const fetchPublicPartnerSchools = async (): Promise<{ id: number; name: string; city: string | null }[]> => {
+  const response = await api.get("/partner-schools/public");
+  return response.data.data;
+};
+
 export const fetchPartnerSchools = async (
   params?: PartnerSchoolQueryParams
 ): Promise<PartnerSchoolListResponse> => {

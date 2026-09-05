@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  applyPublic,
   createApplication,
   getApplicationById,
   getApplications,
@@ -9,6 +10,10 @@ import { authenticate, requirePermission } from '../middlewares/auth.middleware'
 import { PERMISSIONS } from '../types/permissions';
 
 const router = Router();
+
+// Public self-service admission form — must be registered before the auth guard below.
+router.post('/public', applyPublic);
+
 router.use(authenticate);
 
 router.get('/', requirePermission(PERMISSIONS.APPLICATION_VIEW), getApplications);

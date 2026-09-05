@@ -59,3 +59,15 @@ export const formatFileSize = (size?: number | null) => {
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
   return `${(size / (1024 * 1024)).toFixed(2)} MB`;
 };
+
+// Student portal — the logged-in student's own documents
+
+export const getMyDocuments = async (): Promise<DocumentRecord[]> => {
+  const res = await api.get<{ data: DocumentRecord[] }>("/documents/mine");
+  return res.data.data;
+};
+
+export const submitDocument = async (payload: { title: string; type: DocumentType; file: string }): Promise<DocumentRecord> => {
+  const res = await api.post<DocumentRecord>("/documents/mine", payload);
+  return res.data;
+};

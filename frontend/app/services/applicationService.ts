@@ -42,3 +42,27 @@ export async function updateApplicationStatus(id: number, status: ApplicationSta
   const response = await api.patch<Application>(`/applications/${id}/status`, { status });
   return response.data;
 }
+
+export interface ApplyPayload {
+  applicantName: string;
+  email: string;
+  phone?: string;
+  dob?: string;
+  program: string;
+  partnerSchoolId?: number | null;
+  scholarshipRequested?: boolean;
+  scholarshipDetails?: string;
+  notes?: string;
+}
+
+export interface ApplyResponse {
+  applicationCode: string;
+  studentCode: string;
+  credentials: { email: string; tempPassword: string };
+}
+
+/** Public self-service admission form — no auth required, provisions a STUDENT portal account. */
+export const submitPublicApplication = async (payload: ApplyPayload): Promise<ApplyResponse> => {
+  const res = await api.post<ApplyResponse>('/applications/public', payload);
+  return res.data;
+};
