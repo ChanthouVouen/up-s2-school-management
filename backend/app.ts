@@ -23,6 +23,7 @@ import uploadRouter from './routes/upload';
 import documentsRouter from './routes/documents';
 import paymentsRouter from './routes/payments';
 import inquiriesRouter from './routes/inquiries';
+import scholarshipsRouter from './routes/scholarships';
 
 import { swaggerSpec } from './config/swagger';
 import { env } from './config/env';
@@ -70,6 +71,8 @@ app.use('/payments', paymentsRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/inquiries', inquiriesRouter);
 app.use('/api/inquiries', inquiriesRouter);
+app.use('/scholarships', scholarshipsRouter);
+app.use('/api/scholarships', scholarshipsRouter);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

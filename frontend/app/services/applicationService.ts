@@ -17,10 +17,13 @@ export interface Application {
   responsibleStaff?: { id: string; name: string; email: string } | null;
   scholarshipRequested: boolean;
   scholarshipDetails: string | null;
+  discountType: 'PERCENTAGE' | 'FIXED_AMOUNT' | null;
+  discountValue: number | null;
   notes: string | null;
   approvalResult: string | null;
   createdAt: string;
-  student?: { id: number; studentCode: string; name: string; email: string | null } | null;
+  // status/paymentStatus are only populated by fetchApplicationById (the list endpoint selects a narrower shape).
+  student?: { id: number; studentCode: string; name: string; email: string | null; status?: string; paymentStatus?: string } | null;
 }
 
 export async function fetchApplications(params?: { search?: string; status?: string }) {

@@ -16,12 +16,16 @@ export default function StudentPayments() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<Payment | null>(null);
 
+  const pendingInvoice = payments.find((p) => p.status === "PENDING");
+
   const loadPayments = () => {
     setLoading(true);
     getMyPayments()
       .then((res) => {
         setPayments(res.data);
         setPaymentStatus(res.paymentStatus);
+        const invoice = res.data.find((p) => p.status === "PENDING");
+        if (invoice) setAmount(invoice.amount);
       })
       .finally(() => setLoading(false));
   };
@@ -68,23 +72,33 @@ export default function StudentPayments() {
         </div>
 
         <form onSubmit={handlePay} className="space-y-4">
-          <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-bold text-blue-900">{ENROLLMENT_FEE.label}</p>
-              <p className="text-lg font-bold text-blue-900">${ENROLLMENT_FEE.amount}</p>
+          {pendingInvoice ? (
+            <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-amber-900">Tuition Balance Due</p>
+                <p className="text-lg font-bold text-amber-900">${pendingInvoice.amount.toFixed(2)}</p>
+              </div>
+              <p className="mt-1 text-xs text-amber-700">{pendingInvoice.description || "Tuition invoice generated after admission approval."}</p>
             </div>
-            <p className="mt-1 text-xs text-blue-700">{ENROLLMENT_FEE.description}</p>
-          </div>
+          ) : (
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-blue-900">{ENROLLMENT_FEE.label}</p>
+                <p className="text-lg font-bold text-blue-900">${ENROLLMENT_FEE.amount}</p>
+              </div>
+              <p className="mt-1 text-xs text-blue-700">{ENROLLMENT_FEE.description}</p>
+            </div>
+          )}
 
           <button
             type="button"
             onClick={() => {
               setOtherAmount((v) => !v);
-              setAmount(ENROLLMENT_FEE.amount);
+              setAmount(pendingInvoice ? pendingInvoice.amount : ENROLLMENT_FEE.amount);
             }}
             className="text-xs font-medium text-blue-600 hover:underline"
           >
-            {otherAmount ? "Pay the enrollment fee instead" : "I need to pay a different amount"}
+            {otherAmount ? "Pay the amount shown above instead" : "I need to pay a different amount"}
           </button>
 
           {otherAmount && (
@@ -155,7 +169,10 @@ export default function StudentPayments() {
               key: "status",
               header: "Status",
               render: (row) => (
-                <Badge bg={row.status === "COMPLETED" ? "#dcfce7" : "#fee2e2"} color={row.status === "COMPLETED" ? "#16a34a" : "#dc2626"}>
+                <Badge
+                  bg={row.status === "COMPLETED" ? "#dcfce7" : row.status === "PENDING" ? "#fef3c7" : "#fee2e2"}
+                  color={row.status === "COMPLETED" ? "#16a34a" : row.status === "PENDING" ? "#a16207" : "#dc2626"}
+                >
                   {row.status}
                 </Badge>
               ),

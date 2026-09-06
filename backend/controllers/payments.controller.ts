@@ -56,16 +56,29 @@ export const checkout: RequestHandler = asyncHandler(async (req, res) => {
     return;
   }
 
-  const payment = await prisma.payment.create({
-    data: {
-      reference: paymentReference(),
-      studentId: student.id,
-      amount: numericAmount,
-      method: typeof method === 'string' && method.trim() ? method.trim().toUpperCase() : 'CARD',
-      description: description?.trim() || 'Tuition / fee payment',
-      status: 'COMPLETED',
-    },
+  // Settle the outstanding tuition invoice generated at admission approval, if one exists,
+  // instead of logging an unrelated duplicate payment row.
+  const pendingInvoice = await prisma.payment.findFirst({
+    where: { studentId: student.id, status: 'PENDING' },
+    orderBy: { createdAt: 'desc' },
   });
+
+  const resolvedMethod = typeof method === 'string' && method.trim() ? method.trim().toUpperCase() : 'CARD';
+  const payment = pendingInvoice
+    ? await prisma.payment.update({
+        where: { id: pendingInvoice.id },
+        data: { amount: numericAmount, method: resolvedMethod, status: 'COMPLETED' },
+      })
+    : await prisma.payment.create({
+        data: {
+          reference: paymentReference(),
+          studentId: student.id,
+          amount: numericAmount,
+          method: resolvedMethod,
+          description: description?.trim() || 'Tuition / fee payment',
+          status: 'COMPLETED',
+        },
+      });
 
   await prisma.student.update({
     where: { id: student.id },

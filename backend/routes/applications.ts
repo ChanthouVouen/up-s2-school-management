@@ -19,6 +19,6 @@ router.use(authenticate);
 router.get('/', requirePermission(PERMISSIONS.APPLICATION_VIEW), getApplications);
 router.post('/', requirePermission(PERMISSIONS.APPLICATION_VIEW), createApplication);
 router.get('/:id', requirePermission(PERMISSIONS.APPLICATION_VIEW), getApplicationById);
-router.patch('/:id/status', requirePermission(PERMISSIONS.APPLICATION_APPROVE), updateApplicationStatus);
+router.patch('/:id/status', requirePermission(PERMISSIONS.APPLICATION_APPROVE, PERMISSIONS.APPLICATION_REJECT), updateApplicationStatus);
 
 export default router;

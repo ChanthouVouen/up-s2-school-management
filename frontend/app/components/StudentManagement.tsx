@@ -13,6 +13,12 @@ import {
   fetchPartnerSchools,
   PartnerSchool,
 } from "../services/partnerSchoolService";
+import {
+  getScholarshipCodes,
+  getGradeScholarships,
+  type SpecialScholarshipCode,
+  type GradeScholarship,
+} from "../services/scholarshipService";
 import ConfirmModal from "./users/ConfirmModal";
 import StudentDetailView from "./StudentDetailView";
 import Button from "./ui/Button";
@@ -38,6 +44,9 @@ import {
   CheckCircle2,
   GraduationCap,
   Gift,
+  Award,
+  Tag,
+  Building,
   Upload,
   Camera,
   X,
@@ -57,6 +66,13 @@ const EMPTY_FORM = {
   status: StudentStatus.ENROLLED,
   paymentStatus: PaymentStatus.UNPAID,
   partnerSchoolId: "",
+  scholarshipTrack: "NONE" as "NONE" | "GRADE_A" | "SPECIAL_CODE" | "MOU_PARTNER",
+  specialCode: "",
+  scholarshipNotes: "",
+  gradeLetter: "A",
+  gradeDiscountValue: 100,
+  gradeDiscountType: "PERCENTAGE" as "PERCENTAGE" | "FIXED_AMOUNT",
+  gradeSchemeId: "custom",
 };
 
 function getStatusBadgeStyle(status: string) {
@@ -137,6 +153,8 @@ export default function StudentManagement() {
   // Selected Student State
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [specialCodes, setSpecialCodes] = useState<SpecialScholarshipCode[]>([]);
+  const [gradeScholarships, setGradeScholarships] = useState<GradeScholarship[]>([]);
 
   const [addFormData, setAddFormData] = useState(EMPTY_FORM);
   const [editFormData, setEditFormData] = useState(EMPTY_FORM);
@@ -164,12 +182,18 @@ export default function StudentManagement() {
     }
   };
 
-  const loadPartnerSchoolsList = async () => {
+  const loadPartnerSchoolsAndCodes = async () => {
     try {
-      const res = await fetchPartnerSchools({ limit: 100 });
-      setPartnerSchools(res.data);
+      const [partnerRes, codesRes, gradesRes] = await Promise.all([
+        fetchPartnerSchools({ limit: 100 }),
+        getScholarshipCodes(),
+        getGradeScholarships(),
+      ]);
+      setPartnerSchools(partnerRes.data);
+      setSpecialCodes(codesRes.data || []);
+      setGradeScholarships(gradesRes.data || []);
     } catch (err) {
-      console.error("Failed to fetch partner schools list:", err);
+      console.error("Failed to fetch partner schools or codes:", err);
     }
   };
 
@@ -178,7 +202,7 @@ export default function StudentManagement() {
   }, [search, statusFilter, paymentFilter, departmentFilter, page]);
 
   useEffect(() => {
-    loadPartnerSchoolsList();
+    loadPartnerSchoolsAndCodes();
   }, []);
 
   const handleOpenAddModal = () => {
@@ -186,20 +210,54 @@ export default function StudentManagement() {
     setIsAddModalOpen(true);
   };
 
-  const toEditFormData = (student: Student) => ({
-    studentCode: student.studentCode || "",
-    name: student.name || "",
-    email: student.email || "",
-    phone: student.phone || "",
-    gender: student.gender || "Male",
-    dob: student.dob ? new Date(student.dob).toISOString().split("T")[0] : "",
-    address: student.address || "",
-    department: student.department || "Computer Science",
-    photoUrl: student.photoUrl || "",
-    status: (student.status as StudentStatus) || StudentStatus.ENROLLED,
-    paymentStatus: (student.paymentStatus as PaymentStatus) || PaymentStatus.UNPAID,
-    partnerSchoolId: student.partnerSchoolId ? String(student.partnerSchoolId) : "",
-  });
+  const toEditFormData = (student: Student) => {
+    let initialTrack: "NONE" | "GRADE_A" | "SPECIAL_CODE" | "MOU_PARTNER" = "NONE";
+    let initialCode = "";
+    let initialNotes = "";
+    let initialGrade = "A";
+    let initialGradeDiscountValue = 100;
+    let initialGradeDiscountType: "PERCENTAGE" | "FIXED_AMOUNT" = "PERCENTAGE";
+
+    const awardHistory = student.histories?.find((h) => h.action === "SCHOLARSHIP_AWARDED")?.description || "";
+    if (awardHistory.includes("Grade") || student.applications?.some((a) => a.scholarshipDetails?.includes("Grade"))) {
+      initialTrack = "GRADE_A";
+      const gMatch = awardHistory.match(/Grade\s+([A-Z0-9]+)/i);
+      if (gMatch) initialGrade = gMatch[1];
+      const valMatch = awardHistory.match(/:\s*(\d+)(%|\$)/);
+      if (valMatch) {
+        initialGradeDiscountValue = Number(valMatch[1]);
+        initialGradeDiscountType = valMatch[2] === "$" ? "FIXED_AMOUNT" : "PERCENTAGE";
+      }
+    } else if (awardHistory.includes("Special") || awardHistory.includes("Code")) {
+      initialTrack = "SPECIAL_CODE";
+      const match = awardHistory.match(/Code applied:\s*([A-Z0-9_-]+)/i);
+      if (match) initialCode = match[1];
+    } else if (student.partnerSchoolId) {
+      initialTrack = "MOU_PARTNER";
+    }
+
+    return {
+      studentCode: student.studentCode || "",
+      name: student.name || "",
+      email: student.email || "",
+      phone: student.phone || "",
+      gender: student.gender || "Male",
+      dob: student.dob ? new Date(student.dob).toISOString().split("T")[0] : "",
+      address: student.address || "",
+      department: student.department || "Computer Science",
+      photoUrl: student.photoUrl || "",
+      status: (student.status as StudentStatus) || StudentStatus.ENROLLED,
+      paymentStatus: (student.paymentStatus as PaymentStatus) || PaymentStatus.UNPAID,
+      partnerSchoolId: student.partnerSchoolId ? String(student.partnerSchoolId) : "",
+      scholarshipTrack: initialTrack,
+      specialCode: initialCode,
+      scholarshipNotes: initialNotes,
+      gradeLetter: initialGrade,
+      gradeDiscountValue: initialGradeDiscountValue,
+      gradeDiscountType: initialGradeDiscountType,
+      gradeSchemeId: "custom",
+    };
+  };
 
   const handleOpenEditModal = (student: Student) => {
     setSelectedStudent(student);
@@ -209,6 +267,22 @@ export default function StudentManagement() {
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (addFormData.scholarshipTrack === "SPECIAL_CODE") {
+      const code = addFormData.specialCode.trim().toUpperCase();
+      if (!code) {
+        showToast("error", "Please enter a scholarship promo code.");
+        return;
+      }
+      const matched = specialCodes.find((c) => c.code.toUpperCase() === code);
+      if (!matched) {
+        showToast("error", `Promo code "${code}" is invalid or inactive. Please enter a valid code.`);
+        return;
+      }
+    }
+    if (addFormData.scholarshipTrack === "MOU_PARTNER" && !addFormData.partnerSchoolId) {
+      showToast("error", "Please select a partner institution.");
+      return;
+    }
     try {
       setSubmitting(true);
       await createStudent({
@@ -223,7 +297,13 @@ export default function StudentManagement() {
         photoUrl: addFormData.photoUrl,
         status: addFormData.status,
         paymentStatus: addFormData.paymentStatus,
-        partnerSchoolId: addFormData.partnerSchoolId ? Number(addFormData.partnerSchoolId) : null,
+        scholarshipTrack: addFormData.scholarshipTrack === "NONE" ? null : addFormData.scholarshipTrack,
+        partnerSchoolId: addFormData.scholarshipTrack === "MOU_PARTNER" && addFormData.partnerSchoolId ? Number(addFormData.partnerSchoolId) : null,
+        specialCode: addFormData.scholarshipTrack === "SPECIAL_CODE" ? addFormData.specialCode.trim().toUpperCase() : undefined,
+        gradeLetter: addFormData.scholarshipTrack === "GRADE_A" ? addFormData.gradeLetter : undefined,
+        gradeDiscountValue: addFormData.scholarshipTrack === "GRADE_A" ? addFormData.gradeDiscountValue : undefined,
+        gradeDiscountType: addFormData.scholarshipTrack === "GRADE_A" ? addFormData.gradeDiscountType : undefined,
+        scholarshipNotes: addFormData.scholarshipNotes || undefined,
       });
       setIsAddModalOpen(false);
       showToast("success", `Student "${addFormData.name}" enrolled successfully.`);
@@ -239,6 +319,22 @@ export default function StudentManagement() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudent) return;
+    if (editFormData.scholarshipTrack === "SPECIAL_CODE") {
+      const code = editFormData.specialCode.trim().toUpperCase();
+      if (!code) {
+        showToast("error", "Please enter a scholarship promo code.");
+        return;
+      }
+      const matched = specialCodes.find((c) => c.code.toUpperCase() === code);
+      if (!matched) {
+        showToast("error", `Promo code "${code}" is invalid or inactive. Please enter a valid code.`);
+        return;
+      }
+    }
+    if (editFormData.scholarshipTrack === "MOU_PARTNER" && !editFormData.partnerSchoolId) {
+      showToast("error", "Please select a partner institution.");
+      return;
+    }
     try {
       setSubmitting(true);
       await updateStudent(selectedStudent.id, {
@@ -252,7 +348,13 @@ export default function StudentManagement() {
         photoUrl: editFormData.photoUrl,
         status: editFormData.status,
         paymentStatus: editFormData.paymentStatus,
-        partnerSchoolId: editFormData.partnerSchoolId ? Number(editFormData.partnerSchoolId) : null,
+        scholarshipTrack: editFormData.scholarshipTrack === "NONE" ? null : editFormData.scholarshipTrack,
+        partnerSchoolId: editFormData.scholarshipTrack === "MOU_PARTNER" && editFormData.partnerSchoolId ? Number(editFormData.partnerSchoolId) : null,
+        specialCode: editFormData.scholarshipTrack === "SPECIAL_CODE" ? editFormData.specialCode : undefined,
+        gradeLetter: editFormData.scholarshipTrack === "GRADE_A" ? editFormData.gradeLetter : undefined,
+        gradeDiscountValue: editFormData.scholarshipTrack === "GRADE_A" ? editFormData.gradeDiscountValue : undefined,
+        gradeDiscountType: editFormData.scholarshipTrack === "GRADE_A" ? editFormData.gradeDiscountType : undefined,
+        scholarshipNotes: editFormData.scholarshipNotes || undefined,
       });
       setIsEditModalOpen(false);
       showToast("success", `Student "${editFormData.name}" updated successfully.`);
@@ -366,18 +468,20 @@ export default function StudentManagement() {
       key: "scholarship",
       header: "Applied Scholarship",
       render: (stu) => {
-        if (!stu || !stu.partnerSchool) {
-          return <span style={{ fontSize: 11, color: "#94a3b8" }}>Standard Rate</span>;
-        }
-        const activeMou = Array.isArray(stu.partnerSchool.mous) && stu.partnerSchool.mous.length > 0 ? stu.partnerSchool.mous[0] : null;
-        if (activeMou) {
+        if (!stu) return <span style={{ fontSize: 11, color: "#94a3b8" }}>Standard Rate</span>;
+
+        // 1. Check student history for scholarship award
+        const scholarshipHistory = stu.histories?.find((h: any) => h.action === "SCHOLARSHIP_AWARDED");
+        const awardDesc = scholarshipHistory?.description || stu.applications?.[0]?.scholarshipDetails || "";
+
+        if (awardDesc.includes("Grade A")) {
           return (
             <span
               style={{
                 padding: "3px 9px",
                 borderRadius: 20,
-                background: "#f3e8ff",
-                color: "#6b21a8",
+                background: "#fef3c7",
+                color: "#92400e",
                 fontSize: 11,
                 fontWeight: 700,
                 display: "inline-flex",
@@ -385,11 +489,57 @@ export default function StudentManagement() {
                 gap: 4,
               }}
             >
-              <Gift size={12} /> {activeMou.discountValue ?? 0}{activeMou.discountType === "PERCENTAGE" ? "% Off" : "$ Off"}
+              <Award size={12} /> Grade A (100% Off)
             </span>
           );
         }
-        return <span style={{ fontSize: 11, color: "#64748b" }}>Partner Affiliated</span>;
+
+        if (awardDesc.includes("Special") || awardDesc.includes("Code") || awardDesc.includes("🎟️")) {
+          return (
+            <span
+              style={{
+                padding: "3px 9px",
+                borderRadius: 20,
+                background: "#e0e7ff",
+                color: "#3730a3",
+                fontSize: 11,
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <Tag size={12} /> Special Code
+            </span>
+          );
+        }
+
+        // 2. Check partner school MOU
+        if (stu.partnerSchool) {
+          const activeMou = Array.isArray(stu.partnerSchool.mous) && stu.partnerSchool.mous.length > 0 ? stu.partnerSchool.mous[0] : null;
+          if (activeMou) {
+            return (
+              <span
+                style={{
+                  padding: "3px 9px",
+                  borderRadius: 20,
+                  background: "#f3e8ff",
+                  color: "#6b21a8",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Building size={12} /> {activeMou.discountValue ?? 0}{activeMou.discountType === "PERCENTAGE" ? "% Off" : "$ Off"}
+              </span>
+            );
+          }
+          return <span style={{ fontSize: 11, color: "#64748b" }}>Partner Affiliated</span>;
+        }
+
+        return <span style={{ fontSize: 11, color: "#94a3b8" }}>Standard Rate</span>;
       },
     },
     {
@@ -745,25 +895,171 @@ export default function StudentManagement() {
             />
           </FormField>
 
-          {/* PARTNER SCHOOL & SCHOLARSHIP SELECTOR */}
-          <FormField label="Partner Institution / Scholarship Origin">
-            <select
-              value={addFormData.partnerSchoolId}
-              onChange={(e) => setAddFormData({ ...addFormData, partnerSchoolId: e.target.value })}
-              style={fieldInputStyle}
-            >
-              <option value="">None (Standard Rate / Non-Affiliated Student)</option>
-              {partnerSchools.map((ps) => {
-                const mou = ps.mous && ps.mous.length > 0 ? ps.mous[0] : null;
-                const discountText = mou ? ` (${mou.discountValue}${mou.discountType === "PERCENTAGE" ? "% Off Scholarship" : "$ Off Scholarship"})` : "";
-                return (
-                  <option key={ps.id} value={ps.id}>
-                    {ps.name}{discountText}
-                  </option>
-                );
-              })}
-            </select>
-          </FormField>
+          {/* SCHOLARSHIP OPTION (NULLABLE) */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <FormField label="Scholarship / Tuition Track (Optional)">
+              <select
+                value={addFormData.scholarshipTrack}
+                onChange={(e) => {
+                  const val = e.target.value as any;
+                  setAddFormData({
+                    ...addFormData,
+                    scholarshipTrack: val,
+                    partnerSchoolId: "",
+                    specialCode: "",
+                  });
+                }}
+                style={fieldInputStyle}
+              >
+                <option value="NONE">None (Standard Tuition Rate / No Scholarship)</option>
+                <option value="GRADE_A">Grade Merit (Any Grade Letter & Flexible Value)</option>
+                <option value="SPECIAL_CODE">Special Scholarship / Promo Code</option>
+                <option value="MOU_PARTNER">MOU Partner Institution Agreement</option>
+              </select>
+            </FormField>
+
+            {addFormData.scholarshipTrack === "SPECIAL_CODE" && (
+              <div>
+                <FormField label="Enter Scholarship Promo Code *">
+                  <input
+                    required
+                    type="text"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    value={addFormData.specialCode}
+                    onChange={(e) => setAddFormData({ ...addFormData, specialCode: e.target.value.toUpperCase().trim() })}
+                    style={{
+                      ...fieldInputStyle,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      fontWeight: 600,
+                    }}
+                  />
+                </FormField>
+                {addFormData.specialCode.trim() && (() => {
+                  const matched = specialCodes.find((c) => c.code.toUpperCase() === addFormData.specialCode.trim());
+                  return matched ? (
+                    <div style={{ fontSize: 11, color: "#15803d", marginTop: 4, fontWeight: 500 }}>
+                      ✓ Valid Code: {matched.title} ({matched.discountValue}{matched.discountType === "PERCENTAGE" ? "%" : "$"} Off)
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: "#b91c1c", marginTop: 4, fontWeight: 500 }}>
+                      ✕ Code not found in active promo database.
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {addFormData.scholarshipTrack === "MOU_PARTNER" && (
+              <FormField label="Select Partner Institution">
+                <select
+                  value={addFormData.partnerSchoolId}
+                  onChange={(e) => setAddFormData({ ...addFormData, partnerSchoolId: e.target.value })}
+                  style={fieldInputStyle}
+                >
+                  <option value="" disabled>-- Choose partner institution --</option>
+                  {partnerSchools.map((ps) => {
+                    const mou = ps.mous && ps.mous.length > 0 ? ps.mous[0] : null;
+                    const discountText = mou ? ` (${mou.discountValue}${mou.discountType === "PERCENTAGE" ? "%" : "$"} Off)` : "";
+                    return (
+                      <option key={ps.id} value={ps.id}>
+                        {ps.name}{discountText}
+                      </option>
+                    );
+                  })}
+                </select>
+              </FormField>
+            )}
+
+            {addFormData.scholarshipTrack === "GRADE_A" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <FormField label="Pre-configured Grade Scheme">
+                  <select
+                    value={addFormData.gradeSchemeId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      if (id !== "custom") {
+                        const found = gradeScholarships.find((g) => g.id === id);
+                        if (found) {
+                          setAddFormData({
+                            ...addFormData,
+                            gradeSchemeId: id,
+                            gradeLetter: found.grade,
+                            gradeDiscountType: found.discountType === "FIXED_AMOUNT" ? "FIXED_AMOUNT" : "PERCENTAGE",
+                            gradeDiscountValue: found.discountValue,
+                          });
+                          return;
+                        }
+                      }
+                      setAddFormData({ ...addFormData, gradeSchemeId: "custom" });
+                    }}
+                    style={fieldInputStyle}
+                  >
+                    <option value="custom">-- Custom Grade & Discount Input --</option>
+                    {gradeScholarships.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        Grade {g.grade} — {g.title} ({g.discountValue}{g.discountType === "PERCENTAGE" ? "%" : "$"} Off)
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 1fr", gap: 8 }}>
+                  <FormField label="Grade Letter *">
+                    <input
+                      required
+                      type="text"
+                      maxLength={4}
+                      value={addFormData.gradeLetter}
+                      onChange={(e) => setAddFormData({
+                        ...addFormData,
+                        gradeLetter: e.target.value.toUpperCase(),
+                        gradeSchemeId: "custom",
+                      })}
+                      style={{
+                        ...fieldInputStyle,
+                        textTransform: "uppercase",
+                        fontWeight: 700,
+                        textAlign: "center",
+                      }}
+                    />
+                  </FormField>
+
+                  <FormField label="Discount Type">
+                    <select
+                      value={addFormData.gradeDiscountType}
+                      onChange={(e) => setAddFormData({
+                        ...addFormData,
+                        gradeDiscountType: e.target.value as any,
+                        gradeSchemeId: "custom",
+                      })}
+                      style={fieldInputStyle}
+                    >
+                      <option value="PERCENTAGE">Percentage (%)</option>
+                      <option value="FIXED_AMOUNT">Fixed ($)</option>
+                    </select>
+                  </FormField>
+
+                  <FormField label="Discount Value *">
+                    <input
+                      required
+                      type="number"
+                      min={1}
+                      value={addFormData.gradeDiscountValue}
+                      onChange={(e) => setAddFormData({
+                        ...addFormData,
+                        gradeDiscountValue: Number(e.target.value),
+                        gradeSchemeId: "custom",
+                      })}
+                      style={fieldInputStyle}
+                    />
+                  </FormField>
+                </div>
+              </div>
+            )}
+          </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <FormField label="Email">
@@ -948,25 +1244,171 @@ export default function StudentManagement() {
             />
           </FormField>
 
-          {/* PARTNER SCHOOL & SCHOLARSHIP SELECTOR */}
-          <FormField label="Partner Institution / Scholarship Origin">
-            <select
-              value={editFormData.partnerSchoolId}
-              onChange={(e) => setEditFormData({ ...editFormData, partnerSchoolId: e.target.value })}
-              style={fieldInputStyle}
-            >
-              <option value="">None (Standard Rate / Non-Affiliated Student)</option>
-              {partnerSchools.map((ps) => {
-                const mou = ps.mous && ps.mous.length > 0 ? ps.mous[0] : null;
-                const discountText = mou ? ` (${mou.discountValue}${mou.discountType === "PERCENTAGE" ? "% Off Scholarship" : "$ Off Scholarship"})` : "";
-                return (
-                  <option key={ps.id} value={ps.id}>
-                    {ps.name}{discountText}
-                  </option>
-                );
-              })}
-            </select>
-          </FormField>
+          {/* SCHOLARSHIP OPTION (NULLABLE) */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <FormField label="Scholarship / Tuition Track (Optional)">
+              <select
+                value={editFormData.scholarshipTrack}
+                onChange={(e) => {
+                  const val = e.target.value as any;
+                  setEditFormData({
+                    ...editFormData,
+                    scholarshipTrack: val,
+                    partnerSchoolId: "",
+                    specialCode: val === "SPECIAL_CODE" ? editFormData.specialCode : "",
+                  });
+                }}
+                style={fieldInputStyle}
+              >
+                <option value="NONE">None (Standard Tuition Rate / No Scholarship)</option>
+                <option value="GRADE_A">Grade Merit (Any Grade Letter & Flexible Value)</option>
+                <option value="SPECIAL_CODE">Special Scholarship / Promo Code</option>
+                <option value="MOU_PARTNER">MOU Partner Institution Agreement</option>
+              </select>
+            </FormField>
+
+            {editFormData.scholarshipTrack === "SPECIAL_CODE" && (
+              <div>
+                <FormField label="Enter Scholarship Promo Code *">
+                  <input
+                    required
+                    type="text"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    value={editFormData.specialCode}
+                    onChange={(e) => setEditFormData({ ...editFormData, specialCode: e.target.value.toUpperCase().trim() })}
+                    style={{
+                      ...fieldInputStyle,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      fontWeight: 600,
+                    }}
+                  />
+                </FormField>
+                {editFormData.specialCode.trim() && (() => {
+                  const matched = specialCodes.find((c) => c.code.toUpperCase() === editFormData.specialCode.trim());
+                  return matched ? (
+                    <div style={{ fontSize: 11, color: "#15803d", marginTop: 4, fontWeight: 500 }}>
+                      ✓ Valid Code: {matched.title} ({matched.discountValue}{matched.discountType === "PERCENTAGE" ? "%" : "$"} Off)
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: "#b91c1c", marginTop: 4, fontWeight: 500 }}>
+                      ✕ Code not found in active promo database.
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {editFormData.scholarshipTrack === "MOU_PARTNER" && (
+              <FormField label="Select Partner Institution">
+                <select
+                  value={editFormData.partnerSchoolId}
+                  onChange={(e) => setEditFormData({ ...editFormData, partnerSchoolId: e.target.value })}
+                  style={fieldInputStyle}
+                >
+                  <option value="" disabled>-- Choose partner institution --</option>
+                  {partnerSchools.map((ps) => {
+                    const mou = ps.mous && ps.mous.length > 0 ? ps.mous[0] : null;
+                    const discountText = mou ? ` (${mou.discountValue}${mou.discountType === "PERCENTAGE" ? "%" : "$"} Off)` : "";
+                    return (
+                      <option key={ps.id} value={ps.id}>
+                        {ps.name}{discountText}
+                      </option>
+                    );
+                  })}
+                </select>
+              </FormField>
+            )}
+
+            {editFormData.scholarshipTrack === "GRADE_A" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <FormField label="Pre-configured Grade Scheme">
+                  <select
+                    value={editFormData.gradeSchemeId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      if (id !== "custom") {
+                        const found = gradeScholarships.find((g) => g.id === id);
+                        if (found) {
+                          setEditFormData({
+                            ...editFormData,
+                            gradeSchemeId: id,
+                            gradeLetter: found.grade,
+                            gradeDiscountType: found.discountType === "FIXED_AMOUNT" ? "FIXED_AMOUNT" : "PERCENTAGE",
+                            gradeDiscountValue: found.discountValue,
+                          });
+                          return;
+                        }
+                      }
+                      setEditFormData({ ...editFormData, gradeSchemeId: "custom" });
+                    }}
+                    style={fieldInputStyle}
+                  >
+                    <option value="custom">-- Custom Grade & Discount Input --</option>
+                    {gradeScholarships.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        Grade {g.grade} — {g.title} ({g.discountValue}{g.discountType === "PERCENTAGE" ? "%" : "$"} Off)
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 1fr", gap: 8 }}>
+                  <FormField label="Grade Letter *">
+                    <input
+                      required
+                      type="text"
+                      maxLength={4}
+                      value={editFormData.gradeLetter}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        gradeLetter: e.target.value.toUpperCase(),
+                        gradeSchemeId: "custom",
+                      })}
+                      style={{
+                        ...fieldInputStyle,
+                        textTransform: "uppercase",
+                        fontWeight: 700,
+                        textAlign: "center",
+                      }}
+                    />
+                  </FormField>
+
+                  <FormField label="Discount Type">
+                    <select
+                      value={editFormData.gradeDiscountType}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        gradeDiscountType: e.target.value as any,
+                        gradeSchemeId: "custom",
+                      })}
+                      style={fieldInputStyle}
+                    >
+                      <option value="PERCENTAGE">Percentage (%)</option>
+                      <option value="FIXED_AMOUNT">Fixed ($)</option>
+                    </select>
+                  </FormField>
+
+                  <FormField label="Discount Value *">
+                    <input
+                      required
+                      type="number"
+                      min={1}
+                      value={editFormData.gradeDiscountValue}
+                      onChange={(e) => setEditFormData({
+                        ...editFormData,
+                        gradeDiscountValue: Number(e.target.value),
+                        gradeSchemeId: "custom",
+                      })}
+                      style={fieldInputStyle}
+                    />
+                  </FormField>
+                </div>
+              </div>
+            )}
+          </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <FormField label="Email">
