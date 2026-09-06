@@ -40,6 +40,18 @@ const DocumentDetail: React.FC = () => {
     link.target = "_blank";
     link.click();
   };
+  const statusClass =
+    document.status === "VERIFIED"
+      ? "bg-green-100 text-green-700"
+      : document.status === "REJECTED"
+        ? "bg-red-100 text-red-700"
+        : "bg-amber-100 text-amber-700";
+  const statusLabel =
+    document.status === "VERIFIED"
+      ? "Approved"
+      : document.status === "REJECTED"
+        ? "Rejected"
+        : "Pending review";
   return (
     <AdminLayout>
       <div className="min-h-screen bg-slate-50 p-6">
@@ -56,8 +68,10 @@ const DocumentDetail: React.FC = () => {
             </h1>
             <p className="text-gray-500">Document ID: #{document.id}</p>
           </div>
-          <span className="rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-semibold">
-            {document.status}
+          <span
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${statusClass}`}
+          >
+            {statusLabel}
           </span>
         </div>
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.2fr_1fr]">
@@ -113,9 +127,12 @@ const DocumentDetail: React.FC = () => {
             {document.description || "No description provided."}
           </p>
           {document.reviewComment && (
-            <p className="mt-4 rounded bg-slate-50 p-3 text-sm">
-              Review comment: {document.reviewComment}
-            </p>
+            <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm">
+              <strong className="text-slate-700">Review comment</strong>
+              <p className="mt-1 whitespace-pre-wrap text-slate-600">
+                {document.reviewComment}
+              </p>
+            </div>
           )}
         </div>
         <div className="mt-5 flex justify-end gap-2.5">

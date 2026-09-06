@@ -4,14 +4,25 @@ import AdminLayout from "../../../layouts/AdminLayout";
 import {
   uploadDocument,
   DocumentType,
+  formatFileSize,
 } from "../../../services/documentService";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ACCEPTED_FILE_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "image/jpeg",
+  "image/png",
+];
 
 const UploadDocument: React.FC = () => {
   const navigate = useNavigate();
 
   const [file, setFile] = useState<File | null>(null);
   const [documentName, setDocumentName] = useState("");
-  const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<DocumentType>("OTHER");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,8 +30,18 @@ const UploadDocument: React.FC = () => {
 
   const handleFileChange = (selectedFile: File | null) => {
     if (!selectedFile) return;
-
+    if (!ACCEPTED_FILE_TYPES.includes(selectedFile.type)) {
+      setError(
+        "Unsupported file type. Please choose PDF, DOC, DOCX, XLS, XLSX, JPG, or PNG.",
+      );
+      return;
+    }
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setError("The file must be 10 MB or smaller.");
+      return;
+    }
     setFile(selectedFile);
+    setError("");
 
     if (!documentName) {
       setDocumentName(selectedFile.name);
@@ -31,7 +52,11 @@ const UploadDocument: React.FC = () => {
     e.preventDefault();
 
     if (!file) {
-      alert("Please select a document.");
+      setError("Please select a document.");
+      return;
+    }
+    if (!documentName.trim()) {
+      setError("Please enter a document name.");
       return;
     }
 
@@ -85,43 +110,21 @@ const UploadDocument: React.FC = () => {
             />
           </div>
 
-          {/* Row: Document Type & Category */}
-          <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
-            <div className="mb-5">
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
-                Document Type
-              </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value as DocumentType)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="DIPLOMA">Diploma</option>
-                <option value="ID">ID</option>
-                <option value="TRANSCRIPT">Transcript</option>
-                <option value="CERTIFICATE">Certificate</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-
-            <div className="mb-5">
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
-                Category
-              </label>
-              <select
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
-              >
-                <option value="">Select category</option>
-                <option value="Academic">Academic</option>
-                <option value="Student Records">Student Records</option>
-                <option value="Administration">Administration</option>
-                <option value="Finance">Finance</option>
-                <option value="Human Resources">Human Resources</option>
-              </select>
-            </div>
+          <div className="mb-5">
+            <label className="mb-2 block text-sm font-semibold text-gray-700">
+              Document Type
+            </label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as DocumentType)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="DIPLOMA">Diploma</option>
+              <option value="ID">ID</option>
+              <option value="TRANSCRIPT">Transcript</option>
+              <option value="CERTIFICATE">Certificate</option>
+              <option value="OTHER">Other</option>
+            </select>
           </div>
 
           {/* Drop Zone */}
@@ -148,16 +151,14 @@ const UploadDocument: React.FC = () => {
                     or drag and drop your file here
                   </span>
                   <small className="mt-2 text-xs text-gray-400">
-                    PDF, DOCX, XLSX, JPG, PNG
+                    PDF, DOC, DOCX, XLS, XLSX, JPG, PNG · Max 10 MB
                   </small>
                 </>
               ) : (
                 <>
                   <div className="mb-2.5 text-4xl">📄</div>
                   <strong className="text-gray-800">{file.name}</strong>
-                  <span className="text-sm">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </span>
+                  <span className="text-sm">{formatFileSize(file.size)}</span>
                   <small className="mt-2 text-xs text-gray-400">
                     Click to choose another file
                   </small>

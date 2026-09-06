@@ -80,11 +80,35 @@ const ReviewDocument: React.FC = () => {
                 Full Preview
               </button>
             </div>
-            <iframe
-              title={document.title}
-              src={getDocumentUrl(document.fileUrl)}
-              className="h-175 w-full"
-            />
+            {document.fileType === "application/pdf" ? (
+              <iframe
+                title={document.title}
+                src={getDocumentUrl(document.fileUrl)}
+                className="h-175 w-full"
+              />
+            ) : document.fileType.startsWith("image/") ? (
+              <div className="flex h-175 items-center justify-center bg-slate-100 p-4">
+                <img
+                  src={getDocumentUrl(document.fileUrl)}
+                  alt={document.title}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="flex h-175 flex-col items-center justify-center bg-slate-50 p-8 text-center">
+                <p className="font-semibold text-slate-800">
+                  This file cannot be previewed here.
+                </p>
+                <a
+                  href={getDocumentUrl(document.fileUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 text-sm font-semibold text-blue-600 hover:underline"
+                >
+                  Open file in a new tab
+                </a>
+              </div>
+            )}
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="text-lg font-semibold">Review</h2>

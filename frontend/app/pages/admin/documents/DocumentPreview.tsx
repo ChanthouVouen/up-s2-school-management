@@ -29,6 +29,10 @@ const DocumentPreview: React.FC = () => {
     link.target = "_blank";
     link.click();
   };
+  const canEmbed =
+    document &&
+    (document.fileType === "application/pdf" ||
+      document.fileType.startsWith("image/"));
   return (
     <AdminLayout>
       <div className="min-h-screen bg-gray-200">
@@ -62,12 +66,38 @@ const DocumentPreview: React.FC = () => {
         ) : !document ? (
           <p className="p-6">Loading document...</p>
         ) : (
-          <div className="mx-auto my-6 max-w-250 overflow-hidden rounded-lg bg-gray-700">
-            <iframe
-              title={document.title}
-              src={getDocumentUrl(document.fileUrl)}
-              className="h-[80vh] w-full bg-white"
-            />
+          <div className="mx-auto my-6 max-w-250 overflow-hidden rounded-lg bg-gray-700 p-3">
+            {canEmbed ? (
+              document.fileType.startsWith("image/") ? (
+                <img
+                  src={getDocumentUrl(document.fileUrl)}
+                  alt={document.title}
+                  className="mx-auto max-h-[80vh] max-w-full object-contain"
+                />
+              ) : (
+                <iframe
+                  title={document.title}
+                  src={getDocumentUrl(document.fileUrl)}
+                  className="h-[80vh] w-full bg-white"
+                />
+              )
+            ) : (
+              <div className="flex min-h-80 flex-col items-center justify-center bg-white p-8 text-center">
+                <p className="text-lg font-semibold text-slate-900">
+                  Preview unavailable for this file type
+                </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Download the file to open it in Microsoft Office or another
+                  compatible application.
+                </p>
+                <button
+                  onClick={download}
+                  className="mt-5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  Download file
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
