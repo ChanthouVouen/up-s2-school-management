@@ -24,6 +24,7 @@ import SystemActivityLogs from "./pages/admin/activity-log";
 import OrganizationSettings from "./pages/admin/setting";
 import ApplicationsPage, { ApplicationDetailPage } from "./pages/admin/applications";
 import PaymentsPage from "./pages/admin/payments";
+import PaymentReceiptPreviewPage from "./pages/admin/payments/PaymentReceiptPreviewPage";
 import InquiriesPage from "./pages/admin/inquiries";
 
 import IdCardsPage from "./pages/admin/id-cards";
@@ -114,6 +115,10 @@ export function App() {
       </Route>
 
       <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.APPLICATION_VIEW]} />}>
+        <Route element={<ProtectedRoute requiredPermissions={[PERMISSIONS.PAYMENT_VIEW]} />}>
+          <Route path="/payments/:id/receipt" element={<PaymentReceiptPreviewPage />} />
+        </Route>
+
         <Route path="/applications/:id" element={<ApplicationDetailPage />} />
       </Route>
 
