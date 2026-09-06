@@ -87,6 +87,11 @@ const DocumentList: React.FC = () => {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewing, setReviewing] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    right: number;
+    openAbove: boolean;
+  } | null>(null);
   const [editTarget, setEditTarget] = useState<DocumentRecord | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -198,6 +203,7 @@ const DocumentList: React.FC = () => {
     link.target = "_blank";
     link.click();
     setOpenMenuId(null);
+    setMenuPosition(null);
   };
 
   const openEdit = (document: DocumentRecord) => {
@@ -206,6 +212,7 @@ const DocumentList: React.FC = () => {
     setEditDescription(document.description || "");
     setEditType(document.type);
     setOpenMenuId(null);
+    setMenuPosition(null);
   };
 
   const saveEdit = async () => {
@@ -240,11 +247,34 @@ const DocumentList: React.FC = () => {
       setError(`Share link: ${link}`);
     }
     setOpenMenuId(null);
+    setMenuPosition(null);
   };
 
   const retrainDocument = (document: DocumentRecord) => {
     setOpenMenuId(null);
+    setMenuPosition(null);
     setError(`AI learning retry queued for "${document.title}".`);
+  };
+
+  const toggleActionMenu = (
+    documentId: number,
+    button: HTMLButtonElement,
+  ) => {
+    if (openMenuId === documentId) {
+      setOpenMenuId(null);
+      setMenuPosition(null);
+      return;
+    }
+
+    const bounds = button.getBoundingClientRect();
+    const menuHeight = 320;
+    const openAbove = bounds.bottom + menuHeight > window.innerHeight;
+    setOpenMenuId(documentId);
+    setMenuPosition({
+      top: openAbove ? bounds.top - 8 : bounds.bottom + 8,
+      right: window.innerWidth - bounds.right,
+      openAbove,
+    });
   };
 
   return (
@@ -266,7 +296,7 @@ const DocumentList: React.FC = () => {
             </div>
           ))}
         </div> */}
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white h-full">
           <div className="flex flex-col gap-3 border-b border-gray-200 p-4.5 lg:flex-row">
             <input
               className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none"
@@ -393,21 +423,29 @@ const DocumentList: React.FC = () => {
                         <button
                           aria-label={`Actions for ${document.title}`}
                           className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === document.id ? null : document.id,
-                            )
+                          onClick={(event) =>
+                            toggleActionMenu(document.id, event.currentTarget)
                           }
                         >
                           <MoreVertical size={18} />
                         </button>
-                        {openMenuId === document.id && (
-                          <div className="absolute right-4 top-12 z-20 w-52 rounded-lg border border-slate-200 bg-white py-1 text-left shadow-lg">
+                        {openMenuId === document.id && menuPosition && (
+                          <div
+                            className={`fixed z-50 w-56 max-h-[min(24rem,calc(100vh-1rem))] overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-left shadow-xl ${menuPosition.openAbove ? "-translate-y-full" : ""}`}
+                            style={{
+                              top: menuPosition.top,
+                              right: Math.max(menuPosition.right, 8),
+                            }}
+                          >
+                            <p className="border-b border-slate-100 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                              Document actions
+                            </p>
                             <button
                               className={menuItemClass}
                               onClick={() => {
                                 navigate(`/documents/${document.id}/preview`);
                                 setOpenMenuId(null);
+                                setMenuPosition(null);
                               }}
                             >
                               <Eye size={15} /> View / Preview
@@ -424,7 +462,6 @@ const DocumentList: React.FC = () => {
                             >
                               <FilePenLine size={15} /> Edit Details
                             </button>
-                            {/* <button className={menuItemClass} onClick={() => void shareDocument(document)}><Share2 size={15} /> Copy Share Link</button> */}
                             {document.status === "PENDING" && (
                               <>
                                 <button
@@ -434,6 +471,7 @@ const DocumentList: React.FC = () => {
                                     setReviewStatus("VERIFIED");
                                     setReviewComment("");
                                     setOpenMenuId(null);
+                                    setMenuPosition(null);
                                   }}
                                 >
                                   <Check size={15} /> Approve
@@ -445,18 +483,19 @@ const DocumentList: React.FC = () => {
                                     setReviewStatus("REJECTED");
                                     setReviewComment("");
                                     setOpenMenuId(null);
+                                    setMenuPosition(null);
                                   }}
                                 >
                                   <X size={15} /> Reject
                                 </button>
                               </>
                             )}
-                            {/* <button className={menuItemClass} onClick={() => retrainDocument(document)}><RefreshCw size={15} /> Retrain AI</button> */}
                             <button
                               className={`${menuItemClass} text-red-600 hover:bg-red-50`}
                               onClick={() => {
                                 setDocumentToDelete(document);
                                 setOpenMenuId(null);
+                                setMenuPosition(null);
                               }}
                             >
                               <Trash2 size={15} /> Delete
