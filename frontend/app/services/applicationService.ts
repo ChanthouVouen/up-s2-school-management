@@ -54,6 +54,8 @@ export interface ApplyPayload {
   program: string;
   partnerSchoolId?: number | null;
   scholarshipRequested?: boolean;
+  scholarshipTrack?: 'GRADE_A' | 'SPECIAL_CODE' | 'MOU_PARTNER';
+  specialCode?: string;
   scholarshipDetails?: string;
   notes?: string;
 }
@@ -67,5 +69,21 @@ export interface ApplyResponse {
 /** Public self-service admission form — no auth required, provisions a STUDENT portal account. */
 export const submitPublicApplication = async (payload: ApplyPayload): Promise<ApplyResponse> => {
   const res = await api.post<ApplyResponse>('/applications/public', payload);
+  return res.data;
+};
+
+export interface ReapplyPayload {
+  program: string;
+  partnerSchoolId?: number | null;
+  scholarshipRequested?: boolean;
+  scholarshipTrack?: 'GRADE_A' | 'SPECIAL_CODE' | 'MOU_PARTNER';
+  specialCode?: string;
+  scholarshipDetails?: string;
+  notes?: string;
+}
+
+/** Logged-in student whose latest application was rejected submits a new one from their own portal. */
+export const reapplyApplication = async (payload: ReapplyPayload) => {
+  const res = await api.post<Application & { applicationCode: string }>('/applications/reapply', payload);
   return res.data;
 };

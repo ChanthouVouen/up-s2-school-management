@@ -1,9 +1,9 @@
 import { RequestHandler } from 'express';
-import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
+import { getPermissionsService } from '../services/permissions.service';
 
 // GET /permissions - List all permissions (used to populate role permission editors)
 export const getPermissions: RequestHandler = asyncHandler(async (_req, res) => {
-  const permissions = await prisma.permission.findMany({ orderBy: { name: 'asc' } });
+  const permissions = await getPermissionsService();
   res.status(200).json(permissions);
 });

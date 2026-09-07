@@ -3,7 +3,6 @@ import {
   getScholarshipOverview,
   getScholarshipSchemes,
   getScholarshipBeneficiaries,
-  awardScholarship,
   getScholarshipCodes,
   validateScholarshipCode,
   createScholarshipCode,
@@ -43,8 +42,7 @@ router.post('/grades', createGradeScholarship);
 router.put('/grades/:id', updateGradeScholarship);
 router.delete('/grades/:id', deleteGradeScholarship);
 
-// Award & revoke
-router.post('/award', awardScholarship);
+// Revoke
 router.delete('/beneficiaries/:studentId', revokeScholarship);
 
 export default router;

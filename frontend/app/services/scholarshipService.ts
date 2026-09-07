@@ -81,17 +81,6 @@ export interface ScholarshipBeneficiary {
   date: string;
 }
 
-export interface AwardScholarshipPayload {
-  studentId: number;
-  track: "GRADE_A" | "SPECIAL_CODE" | "MOU_PARTNER";
-  partnerSchoolId?: number;
-  specialCode?: string;
-  gradeLetter?: string;
-  discountType?: "PERCENTAGE" | "FIXED_AMOUNT";
-  discountValue?: number;
-  notes?: string;
-}
-
 export interface CreateScholarshipCodePayload {
   code: string;
   title: string;
@@ -182,13 +171,6 @@ export async function getScholarshipBeneficiaries(params?: {
   type?: string;
 }): Promise<{ data: ScholarshipBeneficiary[]; total: number }> {
   const response = await api.get("/scholarships/beneficiaries", { params });
-  return response.data;
-}
-
-export async function awardScholarship(
-  payload: AwardScholarshipPayload
-): Promise<{ message: string; student: any; description: string }> {
-  const response = await api.post("/scholarships/award", payload);
   return response.data;
 }
 

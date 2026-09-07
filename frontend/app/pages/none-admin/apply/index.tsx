@@ -129,6 +129,8 @@ export default function ApplyPage() {
 
       const response = await submitPublicApplication({
         ...form,
+        scholarshipTrack: form.scholarshipRequested ? scholarshipTrack : undefined,
+        specialCode: form.scholarshipRequested && scholarshipTrack === "SPECIAL_CODE" ? specialCode.trim().toUpperCase() : undefined,
         scholarshipDetails: finalScholarshipDetails || form.scholarshipDetails,
         partnerSchoolId: finalPartnerSchoolId,
       });

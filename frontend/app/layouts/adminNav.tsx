@@ -55,7 +55,6 @@ export const NAV_CATEGORIES: NavCategory[] = [
   {
     title: "System & Reports",
     items: [
-      { icon: <BarChart3 size={18} />, label: "Reports", path: "/reports" },
       { icon: <History size={18} />, label: "Activity Logs", path: "/activity-logs", permission: PERMISSIONS.ACTIVITY_VIEW },
       { icon: <Settings size={18} />, label: "Settings", path: "/setting", permission: PERMISSIONS.SETTINGS_VIEW },
     ],
@@ -74,7 +73,6 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
   "ID Cards": "Generate, issue, and manage student and staff ID cards.",
   "User Management": "Manage user accounts.",
   "Roles & Permissions": "Configure user roles, system permissions, and security access controls.",
-  Reports: "Generate administrative analytics and performance reports.",
   "Activity Logs": "Monitor system activity, audit trails, and user logs.",
   Settings: "Configure system preferences and portal settings.",
 };

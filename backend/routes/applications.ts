@@ -4,9 +4,10 @@ import {
   createApplication,
   getApplicationById,
   getApplications,
+  reapplyApplication,
   updateApplicationStatus,
 } from '../controllers/applications.controller';
-import { authenticate, requirePermission } from '../middlewares/auth.middleware';
+import { authenticate, requirePermission, requireRole } from '../middlewares/auth.middleware';
 import { PERMISSIONS } from '../types/permissions';
 
 const router = Router();
@@ -16,6 +17,7 @@ router.post('/public', applyPublic);
 
 router.use(authenticate);
 
+router.post('/reapply', requireRole('STUDENT'), reapplyApplication);
 router.get('/', requirePermission(PERMISSIONS.APPLICATION_VIEW), getApplications);
 router.post('/', requirePermission(PERMISSIONS.APPLICATION_VIEW), createApplication);
 router.get('/:id', requirePermission(PERMISSIONS.APPLICATION_VIEW), getApplicationById);

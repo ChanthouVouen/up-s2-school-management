@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { CreditCard, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { getMyPayments, checkout, type Payment } from "../../../services/paymentService";
-import { ENROLLMENT_FEE } from "../../../constants/fees";
 import Badge from "../../../components/ui/Badge";
 import Table from "../../../components/ui/Table";
 
@@ -9,8 +8,6 @@ export default function StudentPayments() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentStatus, setPaymentStatus] = useState<string>("UNPAID");
   const [loading, setLoading] = useState(true);
-  const [amount, setAmount] = useState<number>(ENROLLMENT_FEE.amount);
-  const [otherAmount, setOtherAmount] = useState(false);
   const [card, setCard] = useState({ number: "", expiry: "", cvc: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,8 +21,6 @@ export default function StudentPayments() {
       .then((res) => {
         setPayments(res.data);
         setPaymentStatus(res.paymentStatus);
-        const invoice = res.data.find((p) => p.status === "PENDING");
-        if (invoice) setAmount(invoice.amount);
       })
       .finally(() => setLoading(false));
   };
@@ -34,6 +29,7 @@ export default function StudentPayments() {
 
   const handlePay = async (event: FormEvent) => {
     event.preventDefault();
+    if (!pendingInvoice) return;
     if (!/^\d{12,19}$/.test(card.number.replace(/\s/g, ""))) {
       setError("Enter a valid card number (demo — no real card is charged)");
       return;
@@ -42,7 +38,7 @@ export default function StudentPayments() {
     setError(null);
     setSuccess(null);
     try {
-      const payment = await checkout({ amount, method: "CARD", description: "Tuition / enrollment fee" });
+      const payment = await checkout({ amount: pendingInvoice.amount, method: "CARD" });
       setSuccess(payment);
       setCard({ number: "", expiry: "", cvc: "" });
       loadPayments();
@@ -71,8 +67,8 @@ export default function StudentPayments() {
           Demo checkout — no real payment gateway is connected, no real card is charged.
         </div>
 
-        <form onSubmit={handlePay} className="space-y-4">
-          {pendingInvoice ? (
+        {pendingInvoice ? (
+          <form onSubmit={handlePay} className="space-y-4">
             <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-amber-900">Tuition Balance Due</p>
@@ -80,39 +76,6 @@ export default function StudentPayments() {
               </div>
               <p className="mt-1 text-xs text-amber-700">{pendingInvoice.description || "Tuition invoice generated after admission approval."}</p>
             </div>
-          ) : (
-            <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-blue-900">{ENROLLMENT_FEE.label}</p>
-                <p className="text-lg font-bold text-blue-900">${ENROLLMENT_FEE.amount}</p>
-              </div>
-              <p className="mt-1 text-xs text-blue-700">{ENROLLMENT_FEE.description}</p>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => {
-              setOtherAmount((v) => !v);
-              setAmount(pendingInvoice ? pendingInvoice.amount : ENROLLMENT_FEE.amount);
-            }}
-            className="text-xs font-medium text-blue-600 hover:underline"
-          >
-            {otherAmount ? "Pay the amount shown above instead" : "I need to pay a different amount"}
-          </button>
-
-          {otherAmount && (
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Amount (USD)</label>
-              <input
-                type="number"
-                min={1}
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-                className="w-40 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none"
-              />
-            </div>
-          )}
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="sm:col-span-2">
@@ -150,9 +113,16 @@ export default function StudentPayments() {
             className="flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <CreditCard size={15} />
-            {submitting ? "Processing…" : `Pay $${amount}`}
+            {submitting ? "Processing…" : `Pay $${pendingInvoice.amount.toFixed(2)}`}
           </button>
-        </form>
+          </form>
+        ) : (
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+            {paymentStatus === "PAID"
+              ? "You have no outstanding balance. Thank you!"
+              : "No payment is currently due. An invoice is generated automatically once your application is approved."}
+          </div>
+        )}
       </div>
 
       <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
