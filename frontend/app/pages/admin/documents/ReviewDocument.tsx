@@ -74,8 +74,14 @@ const ReviewDocument: React.FC = () => {
             <div className="flex items-center justify-between bg-gray-800 px-4 py-3 text-white">
               <span className="text-sm">{document.fileName}</span>
               <button
-                className="rounded bg-gray-700 px-3 py-1.5 text-xs"
-                onClick={() => navigate(`/documents/${id}/preview`)}
+                className="rounded bg-gray-700 px-3 py-1.5 text-xs hover:bg-gray-600 transition-colors cursor-pointer"
+                onClick={() =>
+                  window.open(
+                    getDocumentUrl(document.fileUrl),
+                    "_blank",
+                    "noopener,noreferrer",
+                  )
+                }
               >
                 Full Preview
               </button>

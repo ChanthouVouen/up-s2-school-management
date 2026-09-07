@@ -23,6 +23,7 @@ import {
   DocumentRecord,
   DocumentStatus,
   DocumentType,
+  downloadFileBlob,
   fetchDocuments,
   formatFileSize,
   getDocumentUrl,
@@ -87,11 +88,23 @@ const DocumentList: React.FC = () => {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewing, setReviewing] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number } | null>(null);
   const [editTarget, setEditTarget] = useState<DocumentRecord | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editType, setEditType] = useState<DocumentType>("OTHER");
   const [savingEdit, setSavingEdit] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (openMenuId !== null) {
+        setOpenMenuId(null);
+        setMenuCoords(null);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [openMenuId]);
 
   const loadDocuments = async () => {
     setLoading(true);
@@ -192,12 +205,9 @@ const DocumentList: React.FC = () => {
   };
 
   const downloadDocument = (document: DocumentRecord) => {
-    const link = window.document.createElement("a");
-    link.href = getDocumentUrl(document.fileUrl);
-    link.download = document.fileName;
-    link.target = "_blank";
-    link.click();
+    void downloadFileBlob(document.fileUrl, document.fileName);
     setOpenMenuId(null);
+    setMenuCoords(null);
   };
 
   const openEdit = (document: DocumentRecord) => {
@@ -266,7 +276,7 @@ const DocumentList: React.FC = () => {
             </div>
           ))}
         </div> */}
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="flex flex-col gap-3 border-b border-gray-200 p-4.5 lg:flex-row">
             <input
               className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none"
@@ -362,7 +372,11 @@ const DocumentList: React.FC = () => {
                         <div className="flex min-w-55 items-center gap-3">
                           {getDocumentIcon(document)}
                           <div className="min-w-0">
-                            <strong className="block truncate font-medium text-gray-900">
+                            <strong
+                              onClick={() => navigate(`/documents/${document.id}`)}
+                              className="block truncate font-medium text-gray-900 cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+                              title="Click to view details"
+                            >
                               {document.title}
                             </strong>
                             <small className="text-xs text-gray-400">
@@ -392,76 +406,114 @@ const DocumentList: React.FC = () => {
                       <td className="relative px-4 py-4 text-right">
                         <button
                           aria-label={`Actions for ${document.title}`}
-                          className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === document.id ? null : document.id,
-                            )
-                          }
+                          className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus:outline-none"
+                          onClick={(e) => {
+                            if (openMenuId === document.id) {
+                              setOpenMenuId(null);
+                              setMenuCoords(null);
+                            } else {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const dropdownHeight = 240;
+                              const dropdownWidth = 208;
+                              let top = rect.bottom + 4;
+                              if (rect.bottom + dropdownHeight > window.innerHeight && rect.top - dropdownHeight > 0) {
+                                top = rect.top - dropdownHeight - 4;
+                              }
+                              let left = rect.right - dropdownWidth;
+                              if (left < 10) left = 10;
+                              setMenuCoords({ top, left });
+                              setOpenMenuId(document.id);
+                            }
+                          }}
                         >
                           <MoreVertical size={18} />
                         </button>
-                        {openMenuId === document.id && (
-                          <div className="absolute right-4 top-12 z-20 w-52 rounded-lg border border-slate-200 bg-white py-1 text-left shadow-lg">
-                            <button
-                              className={menuItemClass}
+                        {openMenuId === document.id && menuCoords && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-[9998] cursor-default"
                               onClick={() => {
-                                navigate(`/documents/${document.id}/preview`);
                                 setOpenMenuId(null);
+                                setMenuCoords(null);
+                              }}
+                            />
+                            <div
+                              className="fixed z-[9999] w-52 rounded-lg border border-slate-200 bg-white py-1 text-left shadow-2xl animate-in fade-in zoom-in-95 duration-75"
+                              style={{
+                                top: `${menuCoords.top}px`,
+                                left: `${menuCoords.left}px`,
                               }}
                             >
-                              <Eye size={15} /> View / Preview
-                            </button>
-                            <button
-                              className={menuItemClass}
-                              onClick={() => downloadDocument(document)}
-                            >
-                              <Download size={15} /> Download
-                            </button>
-                            <button
-                              className={menuItemClass}
-                              onClick={() => openEdit(document)}
-                            >
-                              <FilePenLine size={15} /> Edit Details
-                            </button>
-                            {/* <button className={menuItemClass} onClick={() => void shareDocument(document)}><Share2 size={15} /> Copy Share Link</button> */}
-                            {document.status === "PENDING" && (
-                              <>
-                                <button
-                                  className={`${menuItemClass} text-green-700 hover:bg-green-50`}
-                                  onClick={() => {
-                                    setReviewTarget(document);
-                                    setReviewStatus("VERIFIED");
-                                    setReviewComment("");
-                                    setOpenMenuId(null);
-                                  }}
-                                >
-                                  <Check size={15} /> Approve
-                                </button>
-                                <button
-                                  className={`${menuItemClass} text-red-600 hover:bg-red-50`}
-                                  onClick={() => {
-                                    setReviewTarget(document);
-                                    setReviewStatus("REJECTED");
-                                    setReviewComment("");
-                                    setOpenMenuId(null);
-                                  }}
-                                >
-                                  <X size={15} /> Reject
-                                </button>
-                              </>
-                            )}
-                            {/* <button className={menuItemClass} onClick={() => retrainDocument(document)}><RefreshCw size={15} /> Retrain AI</button> */}
-                            <button
-                              className={`${menuItemClass} text-red-600 hover:bg-red-50`}
-                              onClick={() => {
-                                setDocumentToDelete(document);
-                                setOpenMenuId(null);
-                              }}
-                            >
-                              <Trash2 size={15} /> Delete
-                            </button>
-                          </div>
+                              <button
+                                className={menuItemClass}
+                                onClick={() => {
+                                  navigate(`/documents/${document.id}`);
+                                  setOpenMenuId(null);
+                                  setMenuCoords(null);
+                                }}
+                              >
+                                <FileText size={15} /> View Details
+                              </button>
+                              <button
+                                className={menuItemClass}
+                                onClick={() => {
+                                  downloadDocument(document);
+                                  setOpenMenuId(null);
+                                  setMenuCoords(null);
+                                }}
+                              >
+                                <Download size={15} /> Download
+                              </button>
+                              <button
+                                className={menuItemClass}
+                                onClick={() => {
+                                  openEdit(document);
+                                  setOpenMenuId(null);
+                                  setMenuCoords(null);
+                                }}
+                              >
+                                <FilePenLine size={15} /> Edit Details
+                              </button>
+                              {document.status === "PENDING" && (
+                                <>
+                                  <button
+                                    className={`${menuItemClass} text-green-700 hover:bg-green-50`}
+                                    onClick={() => {
+                                      setReviewTarget(document);
+                                      setReviewStatus("VERIFIED");
+                                      setReviewComment("");
+                                      setOpenMenuId(null);
+                                      setMenuCoords(null);
+                                    }}
+                                  >
+                                    <Check size={15} /> Approve
+                                  </button>
+                                  <button
+                                    className={`${menuItemClass} text-red-600 hover:bg-red-50`}
+                                    onClick={() => {
+                                      setReviewTarget(document);
+                                      setReviewStatus("REJECTED");
+                                      setReviewComment("");
+                                      setOpenMenuId(null);
+                                      setMenuCoords(null);
+                                    }}
+                                  >
+                                    <X size={15} /> Reject
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                className={`${menuItemClass} text-red-600 hover:bg-red-50`}
+                                onClick={() => {
+                                  setDocumentToDelete(document);
+                                  setOpenMenuId(null);
+                                  setMenuCoords(null);
+                                }}
+                              >
+                                <Trash2 size={15} /> Delete
+                              </button>
+                            </div>
+                          </>
                         )}
                       </td>
                     </tr>

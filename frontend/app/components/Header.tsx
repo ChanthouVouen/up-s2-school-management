@@ -61,66 +61,32 @@ export default function Header({
         </span>
       </div>
 
-      {/* Right: Notifications & Profile */}
-      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-        <button
-          onClick={onNotificationClick}
-          style={{
-            position: "relative",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: 18,
-          }}
-        >
-          🔔
-          {notificationCount > 0 && (
-            <span
-              style={{
-                position: "absolute",
-                top: -4,
-                right: -4,
-                background: "#ef4444",
-                color: "#fff",
-                fontSize: 10,
-                fontWeight: 700,
-                borderRadius: "50%",
-                width: 16,
-                height: 16,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {notificationCount}
-            </span>
-          )}
-        </button>
-
-        {/* Dropdown list guarded against undefined map errors */}
-        {notifications.length > 0 && (
-          <div style={{ display: "none" }}>
-            {notifications.map((n) => (
-              <div key={n.id}>{n.message}</div>
-            ))}
-          </div>
-        )}
-
+      {/* Right: User Profile */}
+      <div style={{ display: "flex", alignItems: "center" }}>
         <button
           onClick={onProfileClick}
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: 10,
             background: "none",
             border: "none",
-            cursor: "pointer",
+            cursor: onProfileClick ? "pointer" : "default",
+            padding: 0,
+            textAlign: "left",
           }}
         >
-          <AvatarPlaceholder name={currentUser.name} />
-          <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>
-            {currentUser.name}
-          </span>
+          <AvatarPlaceholder name={currentUser?.name || "Admin"} />
+          <div style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", lineHeight: 1.2 }}>
+              {currentUser?.name || "Admin"}
+            </span>
+            {currentUser?.email && (
+              <span style={{ fontSize: 11, color: "#64748b", fontWeight: 400, marginTop: 2 }}>
+                {currentUser.email}
+              </span>
+            )}
+          </div>
         </button>
       </div>
     </header>

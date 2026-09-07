@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import AdminLayout from "../../../layouts/AdminLayout";
 import {
   DocumentRecord,
+  downloadFileBlob,
   fetchDocument,
   formatFileSize,
   getDocumentUrl,
@@ -23,11 +24,7 @@ const DocumentPreview: React.FC = () => {
   }, [id]);
   const download = () => {
     if (!document) return;
-    const link = window.document.createElement("a");
-    link.href = getDocumentUrl(document.fileUrl);
-    link.download = document.fileName;
-    link.target = "_blank";
-    link.click();
+    void downloadFileBlob(document.fileUrl, document.fileName);
   };
   const canEmbed =
     document &&

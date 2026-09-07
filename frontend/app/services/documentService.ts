@@ -71,3 +71,26 @@ export const submitDocument = async (payload: { title: string; type: DocumentTyp
   const res = await api.post<DocumentRecord>("/documents/mine", payload);
   return res.data;
 };
+
+export const downloadFileBlob = async (fileUrl: string, fileName?: string): Promise<void> => {
+  try {
+    const fullUrl = getDocumentUrl(fileUrl);
+    const response = await fetch(fullUrl);
+    if (!response.ok) throw new Error("Failed to fetch file");
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = window.document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName || fileUrl.split("/").pop() || "document.pdf";
+    window.document.body.appendChild(link);
+    link.click();
+    window.document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch {
+    const link = window.document.createElement("a");
+    link.href = getDocumentUrl(fileUrl);
+    link.download = fileName || "document.pdf";
+    link.target = "_blank";
+    link.click();
+  }
+};

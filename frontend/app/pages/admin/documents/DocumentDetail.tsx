@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import AdminLayout from "../../../layouts/AdminLayout";
 import {
   DocumentRecord,
+  downloadFileBlob,
   fetchDocument,
   formatFileSize,
   getDocumentUrl,
@@ -34,11 +35,7 @@ const DocumentDetail: React.FC = () => {
       </AdminLayout>
     );
   const download = () => {
-    const link = window.document.createElement("a");
-    link.href = getDocumentUrl(document.fileUrl);
-    link.download = document.fileName;
-    link.target = "_blank";
-    link.click();
+    void downloadFileBlob(document.fileUrl, document.fileName);
   };
   const statusClass =
     document.status === "VERIFIED"
@@ -85,8 +82,14 @@ const DocumentDetail: React.FC = () => {
                 {document.fileType} · {formatFileSize(document.fileSize)}
               </p>
               <button
-                className="rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white"
-                onClick={() => navigate(`/documents/${document.id}/preview`)}
+                className="rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700 transition-colors cursor-pointer"
+                onClick={() =>
+                  window.open(
+                    getDocumentUrl(document.fileUrl),
+                    "_blank",
+                    "noopener,noreferrer",
+                  )
+                }
               >
                 Preview Document
               </button>
